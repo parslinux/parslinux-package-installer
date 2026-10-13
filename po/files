@@ -1,3 +1,7 @@
-ui/MainWindow.glade
-src/MainWindow.py
+src/MainWindowAdw.py
+src/MainAdw.py
+src/Main.py
 src/DebPackage.py
+src/ArchPackage.py
+src/PackageLoader.py
+src/cli.py

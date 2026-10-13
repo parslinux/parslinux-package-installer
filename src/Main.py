@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Main entry point for parslinux-package-installer (GTK3 frontend).
-Supports CLI package inspection, batch queue, and seamless delegation to GTK4 Libadwaita.
+Main entry point for parslinux-package-installer.
+Modern GTK 4 & Libadwaita primary user interface with headless CLI inspection.
 """
 
 import argparse
@@ -18,13 +18,14 @@ logger = logging.getLogger("parslinux-package-installer")
 
 
 def _get_application_class() -> Any:
-    """Lazily load GTK3 and return Application class."""
+    """Lazily load GTK4 and Libadwaita and return ApplicationAdw class."""
     import gi
-    gi.require_version('Gtk', '3.0')
-    from gi.repository import Gio, GLib, Gtk
-    from MainWindow import MainWindow
+    gi.require_version('Gtk', '4.0')
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw, Gio, GLib
+    from MainWindowAdw import MainWindowAdw
 
-    class Application(Gtk.Application):
+    class ApplicationAdw(Adw.Application):
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             super().__init__(
                 *args,
@@ -32,7 +33,7 @@ def _get_application_class() -> Any:
                 flags=Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE,
                 **kwargs
             )
-            self.window: Optional[MainWindow] = None
+            self.window: Optional[MainWindowAdw] = None
             GLib.set_prgname("org.parslinux.package-installer")
 
         def do_activate(self) -> None:
@@ -49,17 +50,16 @@ def _get_application_class() -> Any:
                 elif os.path.exists(arg) and is_supported_package(arg):
                     target_files.append(os.path.abspath(arg))
 
-            if self.window is not None:
-                if len(target_files) == 1:
-                    self.window.from_file(target_files[0])
-                elif len(target_files) > 1:
-                    self.window.open_batch(target_files)
-                self.window.window.present()
-            else:
-                first_file = Gio.File.new_for_path(target_files[0]) if len(target_files) == 1 else None
-                self.window = MainWindow(self, first_file)
-                if len(target_files) > 1:
-                    self.window.open_batch(target_files)
+            if self.window is None:
+                first_file = target_files[0] if len(target_files) == 1 else None
+                self.window = MainWindowAdw(self, first_file)
+
+            if len(target_files) == 1:
+                self.window.from_file(target_files[0])
+            elif len(target_files) > 1:
+                self.window.open_batch(target_files)
+
+            self.window.present()
 
         def do_open(self, files: List[Gio.File], filecount: int, hint: str) -> None:
             target_paths: List[str] = []
@@ -69,23 +69,21 @@ def _get_application_class() -> Any:
                     target_paths.append(p)
 
             if self.window is None:
-                first_file = files[0] if len(target_paths) == 1 else None
-                self.window = MainWindow(self, first_file)
+                first_file = target_paths[0] if len(target_paths) == 1 else None
+                self.window = MainWindowAdw(self, first_file)
 
             if len(target_paths) == 1:
                 self.window.from_file(target_paths[0])
-                self.window.window.present()
             elif len(target_paths) > 1:
                 self.window.open_batch(target_paths)
-                self.window.window.present()
-            else:
-                self.window.window.present()
 
-    return Application
+            self.window.present()
+
+    return ApplicationAdw
 
 
 def __getattr__(name: str) -> Any:
-    if name == "Application":
+    if name in ("Application", "ApplicationAdw"):
         return _get_application_class()
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
@@ -93,14 +91,14 @@ def __getattr__(name: str) -> Any:
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="parslinux-package-installer",
-        description="Pars Linux Package Installer (Debian .deb & Arch Linux .pkg.tar.*)"
+        description="Pars Linux Package Installer (GTK 4 / Libadwaita Interface)"
     )
     parser.add_argument("files", nargs="*", help="Package files (.deb, .pkg.tar.*) to inspect or install")
     parser.add_argument("-i", "--info", metavar="PKG_FILE", help="Display package metadata in terminal without GUI")
     parser.add_argument("-c", "--check", metavar="PKG_FILE", help="Verify package dependencies in terminal (exit 0: ok, 1: missing)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose debug logging")
     parser.add_argument("--version", action="store_true", help="Show program version and exit")
-    parser.add_argument("--adw", "--gtk4", action="store_true", dest="adw", help="Launch in GTK 4 / Libadwaita mode")
+    parser.add_argument("--adw", "--gtk4", action="store_true", dest="adw", help="Modern Libadwaita mode (default)")
 
     args, unknown = parser.parse_known_args()
 

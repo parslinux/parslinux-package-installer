@@ -11,12 +11,13 @@ Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
          gir1.2-glib-2.0,
-         gir1.2-gtk-3.0,
+         gir1.2-gtk-4.0,
+         gir1.2-adw-1,
          gir1.2-notify-0.7,
-         python3-apt
-Recommends: gir1.2-adw-1, gir1.2-gtk-4.0
-Description: Pars Linux Deb Package Installer
- Graphical tool to view, verify dependencies and install or remove local .deb packages.
+         zstd
+Recommends: python3-apt, debtap
+Description: Pars Linux Package Installer (Pure Libadwaita)
+ Graphical tool to view, verify dependencies and install or remove local .deb and .pkg.tar.* packages.
  Provides single-click install/reinstall/downgrade/remove mechanism (GDebi equivalent).
 Provides: pdebi, gdebi-core, pardus-package-installer
 Conflicts: pardus-package-installer
