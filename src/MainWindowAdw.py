@@ -16,6 +16,9 @@ from gi.repository import Gtk, Gdk, Adw, Gio, GLib, GObject
 
 from DebPackage import DebPackage, HAVE_APT
 from PackageLoader import open_package, is_supported_package
+from SnapshotManager import SnapshotManager
+import NotificationManager
+from cli import get_version
 
 
 class MainWindowAdw(Adw.ApplicationWindow):
@@ -166,6 +169,18 @@ class MainWindowAdw(Adw.ApplicationWindow):
         self.install_revealer.set_child(progress_box)
         main_box.append(self.install_revealer)
 
+        # Snapshot / Restore Point Protection Group
+        self.grp_snapshot = Adw.PreferencesGroup(title="Sistem Güvencesi")
+        self.switch_snapshot = Adw.SwitchRow(
+            title="Kurulum Öncesi Sistem Anlık Görüntüsü (Snapshot)",
+            subtitle=SnapshotManager.get_backend_description(),
+            active=SnapshotManager.is_available()
+        )
+        if not SnapshotManager.is_available():
+            self.switch_snapshot.set_sensitive(False)
+        self.grp_snapshot.add(self.switch_snapshot)
+        main_box.append(self.grp_snapshot)
+
         # Details Preferences Group
         self.grp_details = Adw.PreferencesGroup(title="Paket Ayrıntıları")
         self.row_arch = Adw.ActionRow(title="Mimari")
@@ -253,6 +268,15 @@ class MainWindowAdw(Adw.ApplicationWindow):
 
         # Batch Queue Preferences Group
         self.grp_batch = Adw.PreferencesGroup(title="Kurulum Kuyruğu")
+        self.batch_switch_snapshot = Adw.SwitchRow(
+            title="Kurulum Öncesi Sistem Anlık Görüntüsü (Snapshot)",
+            subtitle=SnapshotManager.get_backend_description(),
+            active=SnapshotManager.is_available()
+        )
+        if not SnapshotManager.is_available():
+            self.batch_switch_snapshot.set_sensitive(False)
+        self.grp_batch.add(self.batch_switch_snapshot)
+
         self.batch_listbox = Gtk.ListBox(css_classes=["boxed-list"])
         self.batch_listbox.set_selection_mode(Gtk.SelectionMode.NONE)
         self.grp_batch.add(self.batch_listbox)
@@ -531,7 +555,12 @@ class MainWindowAdw(Adw.ApplicationWindow):
         GLib.idle_add(set_all_working)
 
         paths = [it['path'] for it in items]
-        cmd = ["pkexec", actions_script, "install", *paths]
+        use_snapshot = (self.batch_switch_snapshot.get_active() and SnapshotManager.is_available())
+        cmd = ["pkexec", actions_script, "install"]
+        if use_snapshot:
+            cmd.append("--snapshot")
+        cmd.extend(paths)
+
         try:
             proc = Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
             proc.communicate()
@@ -559,6 +588,13 @@ class MainWindowAdw(Adw.ApplicationWindow):
             self.batch_progress_lbl.set_label("Tüm paketler kuruldu." if success else "İşlem tamamlandı.")
             self.btn_batch_install.set_sensitive(True)
             self.show_toast("Toplu paket kurulumu tamamlandı!")
+
+            app = self.get_application()
+            if success:
+                NotificationManager.notify_batch_success(len(items), app=app)
+            else:
+                NotificationManager.notify_install_failure("Toplu Kurulum", app=app)
+
         GLib.idle_add(update_results)
 
     # Actions: Install & Remove Single
@@ -596,9 +632,14 @@ class MainWindowAdw(Adw.ApplicationWindow):
 
         actions_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Actions.py")
         target = self.debianpackage if action_type == "install" else self.package.pkgname
+        use_snapshot = (action_type == "install" and self.switch_snapshot.get_active() and SnapshotManager.is_available())
 
         def worker():
-            cmd = ["pkexec", actions_script, action_type, target]
+            cmd = ["pkexec", actions_script, action_type]
+            if use_snapshot:
+                cmd.append("--snapshot")
+            cmd.append(target)
+
             try:
                 proc = Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
                 stdout, stderr = proc.communicate()
@@ -613,6 +654,19 @@ class MainWindowAdw(Adw.ApplicationWindow):
                 msg = f"Paket başarıyla {action_type} edildi." if ok else "İşlem sırasında hata oluştu."
                 self.pkg_status_lbl.set_label(msg)
                 self.show_toast(msg)
+
+                # Send system desktop notification
+                pkg_title = self.package.pkgname if self.package else "Paket"
+                pkg_ver = self.package.get('Version', '') if self.package else ""
+                app = self.get_application()
+                if ok:
+                    if action_type == "install":
+                        NotificationManager.notify_install_success(pkg_title, pkg_ver, app=app)
+                    else:
+                        NotificationManager.notify_remove_success(pkg_title, app=app)
+                else:
+                    NotificationManager.notify_install_failure(pkg_title, app=app)
+
             GLib.idle_add(done)
 
         threading.Thread(target=worker, daemon=True).start()
@@ -625,7 +679,7 @@ class MainWindowAdw(Adw.ApplicationWindow):
         about = Adw.AboutDialog()
         about.set_application_name("Pars Linux Paket Kurucu")
         about.set_developer_name("Pars Linux Geliştirici Ekibi")
-        about.set_version("1.0.0")
+        about.set_version(get_version())
         about.set_application_icon("parslinux-package-installer")
         about.set_comments("Modern GTK 4 ve Libadwaita tabanlı paket kurucu arayüzü.")
         about.set_website("https://parslinux.org")

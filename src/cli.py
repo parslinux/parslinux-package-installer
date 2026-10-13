@@ -14,6 +14,7 @@ from typing import Optional
 
 from DebPackage import DebPackage
 from PackageLoader import open_package, is_supported_package
+from SnapshotManager import SnapshotManager
 
 
 def is_remote_url(target: str) -> bool:
@@ -108,6 +109,8 @@ def cli_info(deb_path: str) -> int:
     if pkg.get("Homepage"):
         print(f" Web Sitesi       : {pkg.get('Homepage')}")
     print(f" Bağımlılıklar    : {pkg.get('Depends', '(Yok)')}")
+    snapshot_backend = SnapshotManager.get_backend_name() if SnapshotManager.is_available() else "Mevcut Değil"
+    print(f" Sistem Güvencesi : {snapshot_backend}")
     desc = pkg.get("Description", "").strip()
     if desc:
         print("-" * 60)
@@ -141,6 +144,11 @@ def cli_check(deb_path: str) -> int:
 
     ok = pkg.check()
     print(f"Paket: {pkg.pkgname} (v{pkg.get('Version', '-')})")
+    if SnapshotManager.is_available():
+        print(f"✓ Sistem Güvencesi: {SnapshotManager.get_backend_name()} anlık görüntü koruması devrede.")
+    else:
+        print("ℹ Sistem Güvencesi: Yapılandırılmış snapshot aracı bulunamadı (İsteğe bağlı).")
+
     if ok:
         print("✓ Bağımlılıklar: Tüm gereksinimler karşılanıyor, kurulabilir.")
         return 0
@@ -151,3 +159,24 @@ def cli_check(deb_path: str) -> int:
         if pkg._failure_string:
             print(f"  Hata Detayı: {pkg._failure_string}", file=sys.stderr)
         return 1
+
+
+def cli_snapshot_status() -> int:
+    """Print system restore point & snapshot backend status."""
+    print("=" * 60)
+    print(" Pars Linux Paket Kurucu — Sistem Güvencesi / Snapshot Durumu")
+    print("-" * 60)
+    backend = SnapshotManager.detect_backend()
+    if backend:
+        print(" Durum            : Aktif (Kullanılabilir)")
+        print(f" Algılanan Araç   : {SnapshotManager.get_backend_name()}")
+        print(f" Açıklama         : {SnapshotManager.get_backend_description()}")
+        cmd = SnapshotManager.build_snapshot_command("test")
+        if cmd:
+            print(f" Örnek Komut      : {' '.join(cmd)}")
+    else:
+        print(" Durum            : Yapılandırılmış araç bulunamadı")
+        print(" Öneri            : Timeshift veya Snapper kurarak kurulum öncesi")
+        print("                    otomatik sistem geri yükleme noktası alabilirsiniz.")
+    print("=" * 60)
+    return 0 if backend else 1

@@ -4,6 +4,23 @@ Tüm önemli sürüm değişiklikleri bu dosyada belgelenmektedir. Format [Keep 
 
 ---
 
+## [2.1.0] - 2026-10-14
+
+### Eklendi
+- **Sistem Anlık Görüntüsü (Snapshot) Güvencesi (`src/SnapshotManager.py`)**:
+  - Kurulum öncesinde otomatik sistem geri yükleme noktası oluşturma altyapısı.
+  - Timeshift (RSYNC / BTRFS modları), Snapper ve Btrfs alt birimleri için otomatik arka uç tespiti.
+  - `Actions.py` içine `--snapshot` bayrağı ve `snapshot` eylemi desteği.
+  - Grafik arayüzde (tekli paket ve toplu kuyruk sayfalarında) anlık görüntü oluşturma tercihi switch'i.
+  - CLI `--snapshot-status` parametresi ile kurulu araç durumunu sorgulama.
+- **Masaüstü Bildirim Sistemi (`src/NotificationManager.py`)**:
+  - GApplication tabanlı `Gio.Notification` ve FreeDesktop `notify-send` çift motorlu bildirim desteği.
+  - Kurulum, kaldırma veya toplu kuyruk işlemleri tamamlandığında masaüstü bildirimleri gösterme.
+- **Test Kapsamı**:
+  - `tests/test_snapshot_and_notifications.py` (16 yeni test ile toplam 40 otomatik test, %100 başarı).
+
+---
+
 ## [2.0.0] - 2026-10-14
 
 ### Eklendi

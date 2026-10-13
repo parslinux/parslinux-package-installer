@@ -4,4 +4,6 @@ src/Main.py
 src/DebPackage.py
 src/ArchPackage.py
 src/PackageLoader.py
+src/SnapshotManager.py
+src/NotificationManager.py
 src/cli.py

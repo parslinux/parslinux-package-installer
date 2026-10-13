@@ -11,7 +11,7 @@ import os
 import sys
 from typing import Any, List, Optional
 
-from cli import cli_check, cli_info, get_version, is_remote_url, download_remote_deb
+from cli import cli_check, cli_info, cli_snapshot_status, get_version, is_remote_url, download_remote_deb
 from PackageLoader import is_supported_package
 
 logger = logging.getLogger("parslinux-package-installer")
@@ -96,6 +96,7 @@ def main() -> int:
     parser.add_argument("files", nargs="*", help="Package files (.deb, .pkg.tar.*) to inspect or install")
     parser.add_argument("-i", "--info", metavar="PKG_FILE", help="Display package metadata in terminal without GUI")
     parser.add_argument("-c", "--check", metavar="PKG_FILE", help="Verify package dependencies in terminal (exit 0: ok, 1: missing)")
+    parser.add_argument("--snapshot-status", action="store_true", help="Display system snapshot (Timeshift/Snapper/Btrfs) status and exit")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose debug logging")
     parser.add_argument("--version", action="store_true", help="Show program version and exit")
     parser.add_argument("--adw", "--gtk4", action="store_true", dest="adw", help="Modern Libadwaita mode (default)")
@@ -121,6 +122,9 @@ def main() -> int:
     if args.version:
         print(f"Pars Linux Package Installer v{get_version()}")
         return 0
+
+    if args.snapshot_status:
+        return cli_snapshot_status()
 
     if args.info:
         return cli_info(args.info)

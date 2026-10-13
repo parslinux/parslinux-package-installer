@@ -14,6 +14,8 @@ import shutil
 import tempfile
 from typing import List, Union
 
+from SnapshotManager import SnapshotManager
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] parslinux-actions: %(message)s",
@@ -89,10 +91,33 @@ def control_lock() -> bool:
         return True
 
 
-def install(targets: Union[str, List[str]]) -> int:
+def install(targets: Union[str, List[str]], create_snapshot: bool = False) -> int:
     """Install one or multiple local package archives (.deb or .pkg.tar.*)."""
     if isinstance(targets, str):
         targets = [targets]
+
+    clean_targets = []
+    for t in targets:
+        if t == "--snapshot":
+            create_snapshot = True
+        else:
+            clean_targets.append(t)
+    targets = clean_targets
+
+    if not targets:
+        logger.error("No valid package path provided for install.")
+        return 1
+
+    if create_snapshot:
+        if SnapshotManager.is_available():
+            base_name = os.path.basename(targets[0])
+            logger.info("Executing pre-installation snapshot for %s via %s...", base_name, SnapshotManager.get_backend_name())
+            ok, msg = SnapshotManager.create_snapshot(f"parslinux-pre-install: {base_name}")
+            if not ok:
+                logger.warning("Snapshot creation issue: %s (Proceeding with installation)", msg)
+        else:
+            logger.info("Snapshot requested, but no configured snapshot tool detected. Proceeding...")
+
     pkg_paths = [os.path.abspath(p) for p in targets]
 
     # Arch Linux native package installation
@@ -197,17 +222,33 @@ def downgrade(target: str) -> int:
     return res.returncode
 
 
+def create_snapshot_action(args: List[str]) -> int:
+    """Create a system snapshot directly via privileged helper."""
+    comment = " ".join(args) if args else "parslinux-manual-snapshot"
+    ok, msg = SnapshotManager.create_snapshot(comment)
+    print(msg)
+    return 0 if ok else 1
+
+
 def main() -> None:
-    if len(sys.argv) <= 2:
-        logger.error("No action or target specified.")
+    if len(sys.argv) <= 1:
+        logger.error("No action specified.")
+        sys.exit(1)
+
+    action = sys.argv[1].lower()
+    targets = sys.argv[2:]
+
+    # Standalone snapshot action does not need dpkg/apt lock
+    if action == "snapshot":
+        sys.exit(create_snapshot_action(targets))
+
+    if not targets:
+        logger.error("No target specified for action: %s", action)
         sys.exit(1)
 
     if not control_lock():
         logger.error("Dpkg/APT frontend lock is currently held by another process.")
         sys.exit(256)
-
-    action = sys.argv[1].lower()
-    targets = sys.argv[2:]
 
     action_map = {
         "install": lambda: install(targets),
