@@ -191,4 +191,4 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 
 ### v2.2.0 (Gelecek Hedefleri)
 - [ ] **💡 Akıllı Alternatif / Flatpak Önerisi:** Depolarda olmayan paketler için Flathub entegrasyonu.
-- [ ] **📦 RPM (.rpm) Ailesi Desteği:** Fedora / openSUSE paketlerinin doğrudan incelenebilmesi.
+- [ ] **📦 RPM (.rpm) Ailesi Desteği (Test Edilecektir):** Fedora / openSUSE paketlerinin doğrudan incelenebilmesi ve deneysel desteği.
