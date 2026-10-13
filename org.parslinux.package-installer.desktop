@@ -8,7 +8,7 @@ GenericName[tr]=Paket Kurucu
 Comment=Install, view and manage Debian (.deb) software packages
 Comment[pt]=Instalar, ver e gerenciar pacotes Debian (.deb)
 Comment[tr]=Debian (.deb) yazılım paketlerini kur, incele ve yönet
-Exec=parslinux-package-installer %f
+Exec=parslinux-package-installer %F
 Icon=parslinux-package-installer
 Terminal=false
 Type=Application
@@ -16,5 +16,12 @@ Categories=System;Settings;PackageManager;GTK;
 MimeType=application/vnd.debian.binary-package;application/x-deb;application/x-debian-package;
 StartupNotify=true
 StartupWMClass=org.parslinux.package-installer
-Keywords=package;apt;dpkg;install;deb;kurucu;paket;gdebi;
+Keywords=package;apt;dpkg;install;deb;kurucu;paket;gdebi;toplu;
 X-ParsLinux-Apps=true
+Actions=Adw;
+
+[Desktop Action Adw]
+Name=Open in Modern Libadwaita Mode (GTK4)
+Name[tr]=Modern Libadwaita Modunda Aç (GTK4)
+Name[pt]=Abrir no Modo Libadwaita Moderno (GTK4)
+Exec=parslinux-package-installer-adw %F

@@ -33,10 +33,12 @@ def main():
                         return False
             return True
 
-    def install(debianpackage):
-        deb_path = os.path.abspath(debianpackage)
+    def install(targets):
+        if isinstance(targets, str):
+            targets = [targets]
+        deb_paths = [os.path.abspath(p) for p in targets]
         return subprocess.call(
-            ["apt", "install", deb_path, "-yq", "-o", "APT::Status-Fd=2",
+            ["apt", "install", *deb_paths, "-yq", "-o", "APT::Status-Fd=2",
              "-o", "Dpkg::Options::=--force-confnew"],
             env={**os.environ, 'DEBIAN_FRONTEND': 'noninteractive'}
         )
@@ -49,9 +51,11 @@ def main():
             env={**os.environ, 'DEBIAN_FRONTEND': 'noninteractive'}
         )
 
-    def remove(packagename):
+    def remove(packagenames):
+        if isinstance(packagenames, str):
+            packagenames = [packagenames]
         return subprocess.call(
-            ["apt", "remove", "--purge", packagename, "-yq", "-o", "APT::Status-Fd=2",
+            ["apt", "remove", "--purge", *packagenames, "-yq", "-o", "APT::Status-Fd=2",
              "-o", "Dpkg::Options::=--force-confnew"],
             env={**os.environ, 'DEBIAN_FRONTEND': 'noninteractive'}
         )
@@ -67,15 +71,15 @@ def main():
     if len(sys.argv) > 2:
         if control_lock():
             action = sys.argv[1]
-            target = sys.argv[2]
+            targets = sys.argv[2:]
             if action == "install":
-                sys.exit(install(target))
+                sys.exit(install(targets))
             elif action == "remove":
-                sys.exit(remove(target))
+                sys.exit(remove(targets))
             elif action == "reinstall":
-                sys.exit(reinstall(target))
+                sys.exit(reinstall(targets[0]))
             elif action == "downgrade":
-                sys.exit(downgrade(target))
+                sys.exit(downgrade(targets[0]))
             else:
                 print(f"Unknown action: {action}")
                 sys.exit(1)

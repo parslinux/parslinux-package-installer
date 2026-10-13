@@ -55,6 +55,20 @@ class DebPackage:
         else:
             self._parse_deb_manually()
 
+    @staticmethod
+    def _open_tar(content):
+        """Open in-memory tar content with gzip, bz2, xz, and zstd fallback."""
+        try:
+            return tarfile.open(fileobj=io.BytesIO(content), mode="r:*")
+        except Exception:
+            try:
+                p = subprocess.run(["zstd", "-d", "-c"], input=content, capture_output=True)
+                if p.returncode == 0 and p.stdout:
+                    return tarfile.open(fileobj=io.BytesIO(p.stdout), mode="r:")
+            except Exception:
+                pass
+            raise
+
     def _parse_deb_manually(self):
         """Pure-python fallback to parse AR archive and extract debian control & file list."""
         control_content = None
@@ -81,7 +95,7 @@ class DebPackage:
 
                 if name.startswith("control.tar"):
                     try:
-                        with tarfile.open(fileobj=io.BytesIO(content), mode="r:*") as tar:
+                        with self._open_tar(content) as tar:
                             for member in tar.getmembers():
                                 if member.name in ("./control", "control"):
                                     extracted = tar.extractfile(member)
@@ -92,7 +106,7 @@ class DebPackage:
 
                 elif name.startswith("data.tar"):
                     try:
-                        with tarfile.open(fileobj=io.BytesIO(content), mode="r:*") as tar:
+                        with self._open_tar(content) as tar:
                             file_list = [m.name.lstrip(".") for m in tar.getmembers() if m.name not in (".", "./")]
                     except Exception as e:
                         print(f"Warning reading data.tar: {e}")
@@ -283,7 +297,7 @@ class DebPackage:
                     if size % 2 == 1:
                         f.read(1)
                     if name.startswith("data.tar"):
-                        with tarfile.open(fileobj=io.BytesIO(content), mode="r:*") as tar:
+                        with self._open_tar(content) as tar:
                             members = tar.getmembers()
                             details = []
                             for m in members:

@@ -46,21 +46,51 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 
 ## 🎯 Kilometre Taşı 6: Yeni Görsel Kimlik, Logo ve Boş Durum Tasarımı ✅
 - [x] Modern Pars Linux squircle (128x128 SVG) uygulama logosu tasarlandı (`images/parslinux-package-installer.svg`).
-- [x] 3D paket koli (parcel), altın mühür bandı, perspektifli `.deb` rozeti ve parlak indirme/kurulum oku görseli oluşturuldu.
-- [x] GTK Boş Durum (Empty State) ekranı büyük 96px logo, kalın başlık, ikincil açıklama ve modern eylem butonu ile zenginleştirildi.
+- [x] 3D paket koli, altın mühür bandı, perspektifli `.deb` rozeti ve indirme oku görseli entegre edildi.
+- [x] GTK Boş Durum ekranı modern logo, karşılama metni ve aksiyon butonu ile güçlendirildi.
 - [x] Bozuk paket (`BrokenDebBox`) ekranına görsel uyarı sembolü eklendi.
-- [x] Pencere ikonu, HeaderBar ve Hakkında diyaloğu logo yükleyicisi otomatik SVG çözümlemesi ile güçlendirildi.
-- [x] Telif hakları ve alt bilgi metinleri `© Pars Linux` olarak tamamlandı.
+- [x] Telif hakları `© Pars Linux` olarak tamamlandı.
 
 ---
 
-## 🎯 Kilometre Taşı 7: İleri Düzey Yetenekler ve GTK 4 / Libadwaita ✅
-- [x] Toplu paket kurulumu (Birden fazla `.deb` dosyasını aynı anda seçip kurabilme).
-- [x] Paket içerilen dosya ağacında (`Included Files`) canlı arama ve filtreleme.
-- [x] Deneysel GTK 4 & Libadwaita arayüz motoru (`src/MainAdw.py`, `src/MainWindowAdw.py`).
+## 🎯 Kilometre Taşı 7: Paket Dosya Ağacı (Included Files) Canlı Arama ve Filtreleme ✅
+- [x] `DebPackage.get_file_details()` ile her dosyanın türü (dizin, dosya, sembolik bağ, çalıştırılabilir), boyutu ve izinleri ayrıştırıldı.
+- [x] Ayrıntılar bölümüne **İçerilen Dosyalar** sekmesi eklendi.
+- [x] Anlık arama kutusu (`GtkSearchEntry`) ve `GtkTreeModelFilter` ile sıfır gecikmeli canlı arama sağlandı.
+- [x] Dosya türü ikonları (klasör, çalıştırılabilir, sembolik bağ, metin) ve biçimlendirilmiş boyut sütunları eklendi.
+- [x] Eşleşen ve toplam dosya sayısı sayaç etiketi eklendi.
 
 ---
 
-## 🚀 Gelecek Planları (Roadmap)
-- [ ] APT / Flathub entegrasyonu ile çevrimiçi paket karşılaştırma.
-- [ ] Wayland üzerinde gelişmiş pencere animasyonları.
+## 🎯 Kilometre Taşı 8: Toplu Paket Kurulumu (Batch Installer & Kuyruk) ✅
+- [x] Dosya seçicide çoklu dosya seçimi (`set_select_multiple(True)`) aktif edildi.
+- [x] Çoklu sürükle-bırak desteği (`on_mainwindow_drag_data_received`) ve CLI'dan birden fazla `.deb` argümanı kabul etme eklendi.
+- [x] `BatchBox` arayüzü ile toplu paket kuyruğu ekranı oluşturuldu.
+- [x] Onay kutuları (`GtkCellRendererToggle`), durum ikonları, sürüm ve boyut özeti entegre edildi.
+- [x] Sıralı arka plan kurulum motoru (`_batch_worker`) ile PolicyKit korumalı toplu kurulum bağlandı.
+- [x] Canlı yüzdelik ilerleme ve tamamlanma masaüstü bildirimleri (`Notify`) eklendi.
+
+---
+
+## 🎯 Kilometre Taşı 9: Modern GTK 4 ve Libadwaita Desteği ✅
+- [x] `src/MainWindowAdw.py` ve `src/MainAdw.py` ile saf GTK 4 & Libadwaita ön yüzü geliştirildi.
+- [x] `Adw.ApplicationWindow`, `Adw.ToolbarView`, `Adw.HeaderBar`, `Adw.ToastOverlay` modern GNOME/Adwaita bileşenleri kullanıldı.
+- [x] `Adw.StatusPage` ile karşılama ve hata sayfaları, `Adw.PreferencesGroup` ve `Adw.ActionRow` ile paket detayları sunuldu.
+- [x] Tekli paket, dosya arama ve toplu kurulum kuyruğu GTK 4 üzerinde tam işlevselleştirildi.
+- [x] `--adw` ve `--gtk4` CLI parametreleri ve `parslinux-package-installer-adw` çalıştırıcısı eklendi.
+- [x] `.desktop` dosyasına Modern Libadwaita Modunda Aç eylemi (`[Desktop Action Adw]`) eklendi.
+
+---
+
+## 🎯 Kilometre Taşı 10: Otomatik Test Paketi ve Doğrulama ✅
+- [x] `tests/test_included_files.py`: Paket içi dosya ayrıştırma, boyut ve izin denetimleri.
+- [x] `tests/test_batch_queue.py`: Çoklu paket ayrıştırma ve kuyruk yönetimi.
+- [x] `tests/test_gui_integration.py`: GTK 3 `MainWindow` ve GTK 4 `MainWindowAdw` pencere testleri.
+- [x] `tests/run_all_tests.py`: Tüm testleri izole süreçlerde otomatik çalıştıran ana test koşucusu.
+
+---
+
+## 🚀 Gelecek Planları (Roadmap v1.1.0+)
+- [ ] Uzak URL'den `.deb` bağlantısı verildiğinde otomatik indirip inceleme desteği.
+- [ ] Flatpak / Snap dönüştürücü analiz modülü entegrasyonu.
+- [ ] Çoklu mimari (Multiarch) kütüphane çakışmalarında otomatik alternatif önerme.

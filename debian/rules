@@ -2,3 +2,7 @@
 
 %:
 	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_fixperms:
+	dh_fixperms
+	-chmod +x debian/parslinux-package-installer/usr/share/parslinux/parslinux-package-installer/src/Actions.py 2>/dev/null || true

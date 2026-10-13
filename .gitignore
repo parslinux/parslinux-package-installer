@@ -1,4 +1,5 @@
 *.deb
+!tests/fixtures/*.deb
 *.glade~
 *.idea
 __pycache__/

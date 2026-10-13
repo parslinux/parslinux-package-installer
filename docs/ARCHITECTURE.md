@@ -6,22 +6,29 @@ Bu doküman, `parslinux-package-installer` uygulamasının teknik mimarisini, bi
 
 ## 1. Genel Mimari Bakış
 
-Uygulama, zayıf bağlı (loosely-coupled) bir model izleyerek kullanıcı arayüzü (GTK 3), paket inceleme/çözümleme motoru (`DebPackage`), ayrıcalık yükseltme (Polkit `pkexec`) ve sistem paket yöneticisi (`apt`/`dpkg`) katmanlarını birbirinden ayırır.
+Uygulama, zayıf bağlı (loosely-coupled) bir model izleyerek kullanıcı arayüzü (GTK 3 ve GTK 4 / Libadwaita), paket inceleme/çözümleme motoru (`DebPackage`), ayrıcalık yükseltme (Polkit `pkexec`) ve sistem paket yöneticisi (`apt`/`dpkg`) katmanlarını birbirinden ayırır.
 
 ```mermaid
 graph TD
-    User([Kullanıcı / Dosya Yöneticisi]) -->|Çift Tıklama / CLI / Sürükle-Bırak| Main[src/Main.py]
-    Main -->|GApplication Yaşam Döngüsü| Win[src/MainWindow.py]
-    Win -->|UI Tanımı| Glade[ui/MainWindow.glade]
-    Win -->|Paket Çözümleme & Bağımlılık Kontrolü| DebPkg[src/DebPackage.py]
+    User([Kullanıcı / Dosya Yöneticisi]) -->|Tekli / Toplu Parametre / DND| Entry[parslinux-package-installer]
+    Entry -->|Varsayılan GTK3| Main[src/Main.py]
+    Entry -->|--adw / --gtk4 Bayrağı| MainAdw[src/MainAdw.py]
     
-    subgraph Sistem Katmanı
+    Main -->|Pencere Yönetimi| Win[src/MainWindow.py]
+    Win -->|UI Tanımı| Glade[ui/MainWindow.glade]
+    MainAdw -->|GTK4 / Libadwaita UI| WinAdw[src/MainWindowAdw.py]
+    
+    Win -->|Paket İnceleme & Dosya Listesi| DebPkg[src/DebPackage.py]
+    WinAdw -->|Paket İnceleme & Dosya Listesi| DebPkg
+    
+    subgraph Sistem ve Çözümleme Katmanı
         DebPkg -->|Tercih Edilen| PyApt[python3-apt / apt.Cache]
         DebPkg -->|Yedek / Fallback| Standalone[Saf Python AR & Tar Ayrıştırıcı]
         PyApt -->|Durum Sorgusu| DpkgDb[(/var/lib/dpkg/status)]
     end
     
-    Win -->|Kurulum / Kaldırma İsteği| Polkit[pkexec / Polkit Daemon]
+    Win -->|Tekli / Toplu Kurulum İsteği| Polkit[pkexec / Polkit Daemon]
+    WinAdw -->|Tekli / Toplu Kurulum İsteği| Polkit
     Polkit -->|Yetkilendirme Onayı| Actions[src/Actions.py]
     Actions -->|Kilit Denetimi| Locks[/var/lib/dpkg/lock-frontend]
     Actions -->|APT İşlemi| AptBin[/usr/bin/apt]
@@ -32,59 +39,42 @@ graph TD
 
 ## 2. Temel Modüller ve Rolleri
 
-### 2.1. `src/Main.py` (GApplication Yönetimi)
+### 2.1. `src/Main.py` (GTK3 GApplication Yönetimi)
 * **GApplication Kimliği**: `org.parslinux.package-installer`
 * **Bayraklar**: `Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE`
 * **Görevi**: 
-  * Dosya yöneticisinden çift tıklandığında gelen `do_open` sinyallerini karşılar.
-  * Uçbirimden argümanla veya argümansız başlatıldığında `do_activate` sinyalini yönetir.
-  * Zaten açık olan bir pencere varsa yeni pencere açmak yerine mevcut pencereye odaklanır ve paketi yükler.
+  * Dosya yöneticisinden çift tıklandığında veya toplu seçim yapıldığında gelen `do_open` sinyallerini karşılar.
+  * Uçbirimden tekli veya çoklu argümanla başlatıldığında `do_activate` sinyalini yönetir (Tek dosya ise doğrudan paket görünümü, çoklu ise toplu kuyruk görünümü).
 
-### 2.2. `src/MainWindow.py` (Arayüz ve Orkestrasyon)
-* **GTK 3 + Glade**: Arayüz bileşenlerini yükler, sinyalleri bağlar.
-* **Worker Thread**: Büyük `.deb` dosyalarının incelenmesi ve `apt.Cache` başlatılmasını arayüzü dondurmamak için arka plan iş parçacığında (`threading.Thread`) yürütür, sonucu `GLib.idle_add` ile UI'a aktarır.
-* **Durum Yöneticisi**: `mainstack` bileşeni üzerinden `splash`, `empty`, `package`, `brokendeb`, `broken` durumları arasında geçiş yapar.
-* **Canlı Süreç İzleme**: `Actions.py` sürecini `GLib.spawn_async` ile başlatır; `stdout` ve `stderr` akışlarını `GLib.IOChannel` ve `io_add_watch` ile dinler.
-* **Yüzdelik İlerleme Çözümleme**: APT `Status-Fd=2` çıktısındaki `dlstatus` (indirme) ve `pmstatus` (paket yöneticisi) akışlarını regex ile yakalayıp ilerleme çubuğunu günceller.
+### 2.2. `src/MainWindow.py` (GTK3 Denetleyici ve Durum Makinesi)
+* **Arayüz Durumları**:
+  * `empty`: Paket yüklenmediğinde karşılama ve sürükle-bırak hedefi.
+  * `package`: Paket bilgileri, sürüm rozetleri ve dinamik eylem butonları (Kur / Kaldır / Yükselt / Sürüm Düşür).
+  * `batch`: Toplu paket kurulum kuyruğu (`BatchBox`).
+  * `broken`: Bozuk sistem veya bağımlılık hatası.
+  * `brokendeb`: Bozuk `.deb` arşivi.
+* **İçerilen Dosyalar Arama ve Filtreleme**: `GtkSearchEntry`, `GtkTreeModelFilter` ve `GtkTreeView` entegrasyonu ile arşiv içeriğindeki dosyaları gerçek zamanlı filtreler.
+* **Toplu Kurulum Kuyruğu**: Arka plan iş parçacığında (`_batch_worker`) sırayla `Actions.py` çalıştırarak durum ikonlarını ve genel ilerleme çubuğunu günceller.
 
-### 2.3. `src/DebPackage.py` (Hibrit Paket İnceleme Motoru)
-* **`python3-apt` Varsa**:
-  * `apt.debfile.DebPackage` sarmalayıcısını kullanır.
-  * `check()` metodu ile bağımlılıkların depolardan karşılanıp karşılanamayacağını hesaplar.
-  * `compare_to_version_in_cache()` ile sistemdeki sürümle karşılaştırma yapar.
-* **`python3-apt` Yoksa (Geliştirici / Fallback Modu)**:
-  * Saf Python ile Debian paketinin `ar` arşiv yapısını (`!<arch>\n`) okur.
-  * `control.tar.*` içinden RFC822 formatındaki `control` dosyasını çözümler.
-  * `data.tar.*` içinden paketin içerdiği dosyaların listesini çıkarır.
-  * Sistemde `dpkg-query` varsa kurulu sürümle karşılaştırır.
+### 2.3. `src/MainAdw.py` & `src/MainWindowAdw.py` (Modern GTK4 / Libadwaita Motoru)
+* Saf GTK 4 ve Libadwaita (`Adw.Application`, `Adw.ApplicationWindow`, `Adw.ToolbarView`, `Adw.HeaderBar`) kullanır.
+* `Adw.StatusPage` ile karşılama ve hata sayfaları, `Adw.PreferencesGroup` ve `Adw.ActionRow` ile sistem ayarlarına uyumlu paket detayları sunar.
+* GNOME / Pars Linux modern masaüstü standartlarına tam uyumludur.
 
-### 2.4. `src/Actions.py` (Root Ayrıcalıklı İşlem Yürütücü)
-* Bu betik doğrudan kullanıcı tarafından değil, `MainWindow` tarafından `pkexec` aracılığıyla kök kullanıcı yetkileriyle çağrılır.
-* **İşlemler**:
-  * `install`: `apt install <tam_yol.deb> -yq -o APT::Status-Fd=2 -o Dpkg::Options::=--force-confnew`
-  * `reinstall`: `apt install --reinstall --allow-downgrades <tam_yol.deb> ...`
-  * `downgrade`: `apt install --allow-downgrades <tam_yol.deb> ...`
-  * `remove`: `apt remove --purge <paket_adi> ...`
-* **Kilit Denetimi**: İşleme başlamadan önce `/var/lib/dpkg/lock-frontend` ve ilgili APT kilitlerini kontrol eder; başka bir paket yöneticisi çalışıyorsa çakışmayı önler.
+### 2.4. `src/DebPackage.py` (Bağımsız Hibrit Paket Motoru)
+* Hibrit çalışma mantığı: `python3-apt` varsa sistem kütüphanesini kullanır, yoksa dahili saf Python AR ve Tar arşiv ayrıştırıcısı ile çalışır.
+* `get_file_details()` metoduyla her bir dosya üyesinin adı, boyutu, türü (dizin, dosya, sembolik bağ) ve çalıştırılabilir bitlerini anında raporlar.
+
+### 2.5. `src/Actions.py` (Ayrıcalıklı Kurulum ve Kaldırma Yardımcısı)
+* Yalnızca `root` yetkisiyle `pkexec` üzerinden çağrılır.
+* APT kilit dosyasını (`/var/lib/dpkg/lock-frontend`) denetler; kilit meşgulse işlem yapmadan 256 çıkış koduyla kullanıcıyı uyarır.
+* Çoklu paket yollarını tek bir `apt install <yollar...>` çağrısında toplu kurabilir.
 
 ---
 
-## 3. Paket Durum Makinesi
+## 3. Test ve Kalite Güvencesi Mimarisi
 
-Bir `.deb` paketi yüklendiğinde sürüm karşılaştırma motoru aşağıdaki durum kodlarını üretir:
-
-| Durum Kodu | Sabit Adı | Anlamı | Buton 1 Etiketi | Buton 2 (Kaldır) |
-|:---|:---|:---|:---|:---|
-| `0` | `VERSION_NONE` | Paket sistemde hiç kurulu değil | **Kur** (`Install`) | Devre Dışı |
-| `1` | `VERSION_OUTDATED` | Paket sistemde kurulu olandan daha eski | **Sürüm Düşür** (`Downgrade`) | **Aktif** |
-| `2` | `VERSION_SAME` | Aynı sürüm sistemde zaten kurulu | **Yeniden Kur** (`Reinstall`) | **Aktif** |
-| `3` | `VERSION_NEWER` | Paket kurulu olandan daha yeni | **Yükselt** (`Upgrade`) | **Aktif** |
-
----
-
-## 4. Güvenlik ve Yetkilendirme Modeli
-
-1. **Ayrıcalık Ayrımı**: Grafik arayüzü (`MainWindow.py`) kesinlikle `root` olarak çalıştırılmaz; normal kullanıcı yetkileriyle çalışır.
-2. **PolicyKit Entegrasyonu**: Kök yetki gerektiren tek işlem `src/Actions.py` çalıştırmasıdır.
-3. **Kural Dosyası**: `/usr/share/polkit-1/actions/org.parslinux.pkexec.parslinux-package-installer.policy`
-4. **Denetim**: Sistem yöneticisi şifre doğrulama ekranı PolicyKit GUI ajanı tarafından güvenli bir şekilde sunulur.
+* `tests/test_included_files.py`: `DebPackage` dosya ayrıştırma ve metaveri doğruluğu.
+* `tests/test_batch_queue.py`: Toplu kurulum kuyruğu çoklu paket ayrıştırması.
+* `tests/test_gui_integration.py`: GTK 3 ve GTK 4 arayüz bileşenlerinin yaşam döngüsü.
+* `tests/run_all_tests.py`: Tüm testleri süreç izolasyonuyla koşturan ana çalıştırıcı.

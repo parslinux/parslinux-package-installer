@@ -360,19 +360,22 @@ class MainWindowAdw(Adw.ApplicationWindow):
             self.btn_remove.set_sensitive(True)
 
         # Fill Details
-        self.row_arch.set_subtitle(self.package.get("Architecture", "-"))
-        self.row_section.set_subtitle(self.package.get("Section", "-"))
+        def safe_txt(val):
+            return GLib.markup_escape_text(str(val or "-"), -1)
+
+        self.row_arch.set_subtitle(safe_txt(self.package.get("Architecture", "-")))
+        self.row_section.set_subtitle(safe_txt(self.package.get("Section", "-")))
         raw_size = self.package.get("Installed-Size", "-")
         self.row_size.set_subtitle(f"{raw_size} KiB" if raw_size != "-" else "-")
-        self.row_installed.set_subtitle(installed_ver or "Kurulu Değil")
-        self.row_maintainer.set_subtitle(self.package.get("Maintainer", "-"))
-        self.row_homepage.set_subtitle(self.package.get("Homepage", "-"))
+        self.row_installed.set_subtitle(safe_txt(installed_ver or "Kurulu Değil"))
+        self.row_maintainer.set_subtitle(safe_txt(self.package.get("Maintainer", "-")))
+        self.row_homepage.set_subtitle(safe_txt(self.package.get("Homepage", "-")))
 
         # Depends
         deps = self.package.get("Depends", "-")
-        self.row_depends.set_subtitle(deps)
+        self.row_depends.set_subtitle(safe_txt(deps))
         missing = self.package.packagemissingdeps if hasattr(self.package, 'packagemissingdeps') else ""
-        self.row_missingdeps.set_subtitle(missing or "Tüm bağımlılıklar karşılandı")
+        self.row_missingdeps.set_subtitle(safe_txt(missing or "Tüm bağımlılıklar karşılandı"))
 
         # Populate Files
         self.populate_files()

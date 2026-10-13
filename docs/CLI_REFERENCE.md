@@ -8,24 +8,36 @@
 
 ### Kullanım Şekli:
 ```bash
-parslinux-package-installer [SEÇENEKLER] [DOSYA.DEB]
+parslinux-package-installer [SEÇENEKLER] [DOSYA1.DEB] [DOSYA2.DEB ...]
 ```
 
-### Parametreler:
-* `[DOSYA.DEB]`: İncelenecek ve kurulacak Debian paket dosyasının göreceli veya mutlak dosya yolu. Parametre verilmezse uygulama boş karşılama ekranıyla açılır.
+### Parametreler ve Seçenekler:
+* `[DOSYA1.DEB]`: Tek bir paket verilirse doğrudan tekli paket inceleme ve kurma ekranı açılır.
+* `[DOSYA1.DEB] [DOSYA2.DEB ...]`: Birden fazla paket verildiğinde doğrudan **Toplu Kurulum (Batch Installer)** kuyruğu açılır.
+* `--adw`, `--gtk4`: Uygulamayı modern GTK 4 & Libadwaita arayüz motoru ile başlatır.
 * `--help`, `-h`: Yardım mesajını görüntüler.
 * `--version`: Sürüm numarasını görüntüler.
 
+### Alternatif Çalıştırıcı: `parslinux-package-installer-adw`
+Doğrudan modern GTK 4 / Libadwaita modunda başlatmak için kullanılır:
+```bash
+parslinux-package-installer-adw [DOSYALAR.DEB...]
+```
+
 ### Örnekler:
 ```bash
-# Boş karşılama ekranını aç
+# Boş karşılama ekranını aç (GTK3)
 parslinux-package-installer
 
 # İndirilen paketi doğrudan aç
 parslinux-package-installer ~/İndirilenler/discord_0.0.40_amd64.deb
 
-# Göreceli yoldan aç
-parslinux-package-installer ./test.deb
+# Birden fazla paketi toplu kuyrukta aç
+parslinux-package-installer pkg1.deb pkg2.deb pkg3.deb
+
+# Modern Libadwaita (GTK4) arayüzünde başlat
+parslinux-package-installer --adw ./uygulama.deb
+parslinux-package-installer-adw ./uygulama.deb
 ```
 
 ---
@@ -36,14 +48,14 @@ parslinux-package-installer ./test.deb
 
 ### Kullanım Şekli:
 ```bash
-pkexec /usr/share/parslinux/parslinux-package-installer/src/Actions.py <EYLEM> <HEDEF>
+pkexec /usr/share/parslinux/parslinux-package-installer/src/Actions.py <EYLEM> <HEDEFLER...>
 ```
 
 ### Eylemler (`<EYLEM>`):
-* `install <dosya.deb>`: Belirtilen yerel `.deb` paketini `apt install <yol> -yq -o APT::Status-Fd=2` komutu ile kurar.
+* `install <dosya1.deb> [dosya2.deb ...]`: Belirtilen tekli veya çoklu yerel `.deb` paketlerini `apt install <yollar> -yq -o APT::Status-Fd=2` komutu ile kurar.
 * `reinstall <dosya.deb>`: Aynı sürümdeki paketi `--reinstall --allow-downgrades` bayraklarıyla yeniden kurar.
 * `downgrade <dosya.deb>`: Paketi `--allow-downgrades` bayrağı ile eski sürüme düşürür.
-* `remove <paket_adi>`: Belirtilen kurulu paketi `apt remove --purge <paket_adi>` ile sistemden tamamen kaldırır.
+* `remove <paket1> [paket2 ...]`: Belirtilen kurulu paketleri `apt remove --purge <paketler>` ile sistemden tamamen kaldırır.
 
 ### Çıkış Kodları (Exit Codes):
 * `0`: İşlem başarıyla tamamlandı.

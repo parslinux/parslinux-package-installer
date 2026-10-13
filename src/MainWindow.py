@@ -74,7 +74,8 @@ class MainWindow(object):
         try:
             ver_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "__version__")
             if os.path.exists(ver_file):
-                version = open(ver_file).readline().strip()
+                with open(ver_file, "r", encoding="utf-8") as f:
+                    version = f.readline().strip()
                 self.about_dialog.set_version(version)
         except Exception:
             pass
@@ -742,41 +743,45 @@ class MainWindow(object):
             return False
 
         line = source.readline()
-        if line:
-            self.textview.get_buffer().insert(self.textview.get_buffer().get_end_iter(), line)
-            self.textview.scroll_to_iter(self.textview.get_buffer().get_end_iter(), 0.0, False, 0.0, 0.0)
+        if not line:
+            return False
 
+        self.textview.get_buffer().insert(self.textview.get_buffer().get_end_iter(), line)
+        self.textview.scroll_to_iter(self.textview.get_buffer().get_end_iter(), 0.0, False, 0.0, 0.0)
         return True
 
     def on_process_stderr(self, source, condition):
         if condition == GLib.IO_HUP:
             return False
-        line = source.readline()
-        if line is not None:
-            if "dlstatus" in line:
-                percent = line.split(":")[2].split(".")[0]
-                self.progressbar.set_show_text(True)
-                self.progressbar.set_text("{} %".format(percent))
-                self.progressbar.set_fraction(int(percent) / 100)
-            elif "pmstatus" in line:
-                percent = line.split(":")[2].split(".")[0]
-                self.progressbar.set_show_text(True)
-                self.progressbar.set_text("{} {} %".format(self.packageaction, percent))
-                self.progressbar.set_fraction(int(percent) / 100)
-            elif re.match(r"^[A-Za-zÇĞİÖŞÜçğıöşü]+:", line.strip()) and ".deb" in line:
-                print("connection error")
-                self.error = True
-            elif re.match(r"^[A-Za-zÇĞİÖŞÜçğıöşü]+:", line.strip()) and "dpkg --configure -a" in line:
-                print("dpkg --configure -a error")
-                self.error = True
-                self.dpkgconferror = True
-            elif re.match(r"^[A-Za-zÇĞİÖŞÜçğıöşü]+:", line.strip()) and "/var/lib/dpkg/lock-frontend" in line:
-                print("/var/lib/dpkg/lock-frontend error")
-                self.error = True
-                self.dpkglockerror = True
 
-            self.textview.get_buffer().insert(self.textview.get_buffer().get_end_iter(), line)
-            self.textview.scroll_to_iter(self.textview.get_buffer().get_end_iter(), 0.0, False, 0.0, 0.0)
+        line = source.readline()
+        if not line:
+            return False
+
+        if "dlstatus" in line:
+            percent = line.split(":")[2].split(".")[0]
+            self.progressbar.set_show_text(True)
+            self.progressbar.set_text("{} %".format(percent))
+            self.progressbar.set_fraction(int(percent) / 100)
+        elif "pmstatus" in line:
+            percent = line.split(":")[2].split(".")[0]
+            self.progressbar.set_show_text(True)
+            self.progressbar.set_text("{} {} %".format(self.packageaction, percent))
+            self.progressbar.set_fraction(int(percent) / 100)
+        elif re.match(r"^[A-Za-zÇĞİÖŞÜçğıöşü]+:", line.strip()) and ".deb" in line:
+            print("connection error")
+            self.error = True
+        elif re.match(r"^[A-Za-zÇĞİÖŞÜçğıöşü]+:", line.strip()) and "dpkg --configure -a" in line:
+            print("dpkg --configure -a error")
+            self.error = True
+            self.dpkgconferror = True
+        elif re.match(r"^[A-Za-zÇĞİÖŞÜçğıöşü]+:", line.strip()) and "/var/lib/dpkg/lock-frontend" in line:
+            print("/var/lib/dpkg/lock-frontend error")
+            self.error = True
+            self.dpkglockerror = True
+
+        self.textview.get_buffer().insert(self.textview.get_buffer().get_end_iter(), line)
+        self.textview.scroll_to_iter(self.textview.get_buffer().get_end_iter(), 0.0, False, 0.0, 0.0)
 
         return True
 
