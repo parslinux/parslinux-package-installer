@@ -62,6 +62,22 @@ gbp buildpackage --git-export-dir=/tmp/build/parslinux-package-installer -us -uc
 
 ---
 
+## 📚 Dokümantasyon
+
+Detaylı teknik kılavuzlar ve belgeler için aşağıdaki bağlantıları inceleyebilirsiniz:
+
+- 📖 [Dokümantasyon İndeksi](docs/INDEX.md)
+- 🖥️ [Kullanım Kılavuzu](docs/KULLANIM_KILAVUZU.md) — Grafik arayüz, paket açma yöntemleri ve sorun giderme
+- 🏗️ [Mimari Spesifikasyonu](docs/ARCHITECTURE.md) — Modül yapısı, GApplication yaşam döngüsü ve durum makinesi
+- 📦 [Paketleme ve Dağıtım](docs/PAKETLEME_VE_DAGITIM.md) — Debian paketi derleme, MIME entegrasyonu ve Polkit
+- 💻 [Geliştirici Kılavuzu](docs/GELISTIRICI_KILAVUZU.md) — Geliştirme ortamı, testler ve çeviri yönetimi
+- 🔀 [Fork ve Geliştirme Notları](FORK.md) — Proje geçmişi ve yapılan yenilikler
+- 🤝 [Katkı Sağlama Rehberi](CONTRIBUTING.md) — Katkı kuralları ve PR iş akışı
+- 🔒 [Güvenlik Politikası](SECURITY.md) — Polkit modeli ve güvenlik bildirimleri
+
+---
+
 ## 📄 Lisans
 
 GPL-3.0+ — Ayrıntılar için [LICENSE](LICENSE) ve [FORK.md](FORK.md) dosyalarına bakınız.
+
