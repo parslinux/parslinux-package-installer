@@ -114,7 +114,7 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
   - Arch Linux üzerinde `.deb` açıldığında `debtap` otomatik dönüştürme ve kurma desteği.
   - Debian ve Pars Linux üzerinde eksiksiz APT/dpkg uyumluluğunun korunması.
 - [x] **Ön Yüz ve Kullanıcı Deneyimi Entegrasyonu**:
-  - `MainWindow.py` (GTK3) ve `MainWindowAdw.py` (GTK4 / Libadwaita) arayüzlerinde hem `.deb` hem `.pkg.tar.*` paketlerini tek tıkla açma, inceleme ve toplu kuyruğa ekleme.
+  - `MainWindowAdw.py` (GTK4 / Libadwaita) arayüzünde hem `.deb` hem `.pkg.tar.*` paketlerini tek tıkla açma, inceleme ve toplu kuyruğa ekleme.
   - Sürükle ve bırak (Drag & Drop) ve dosya seçici pencerelerine Arch paket filtreleri eklendi.
   - Masaüstü kısayolu (`.desktop`) MIME tipleri `application/x-zstd-compressed-tar`, `application/x-arch-package` ile genişletildi.
 - [x] **Arch Linux / AUR Paketleme Standartları**:
@@ -129,7 +129,7 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 - [x] **Eski Glade 3 XML ve GTK3 Tamamen Emekliye Ayrıldı**:
   - `ui/MainWindow.glade` (1.250 satırlık eski XML iskeleti) projeden silindi.
   - Eski `src/MainWindow.py` silindi; `Main.py` doğrudan modern `ApplicationAdw` ön yüzünü çalıştıracak şekilde ana giriş noktası haline getirildi.
-  - `debian/changelog` içindeki 300 satırlık eski Pardus geçmişi silinerek tertemiz `parslinux-package-installer (1.0.0)` sürüm kaydına geçildi.
+  - `debian/changelog` içindeki 300 satırlık eski Pardus geçmişi silinerek tertemiz `parslinux-package-installer (2.0.0)` sürüm kaydına geçildi.
   - `setup.py` ve `debian/control` saf GTK4 & Libadwaita bağımlılıklarına uyarlandı.
   - **Yeni Kod Oranı:** Çekirdek Python kodlarının **%97.5'i**, tüm projenin ise **%82.6'sı** doğrudan Pars Linux ekibi (bizim tarafımızdan) yazılmış hale geldi!
 
@@ -144,24 +144,23 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 6. **Toplu Kurulum Tek Oturum (Single APT Transaction):** Kuyruktaki paketlerin her biri için ayrı ayrı Polkit şifresi sormak yerine tüm paketler tek bir `pkexec Actions.py install deb1 deb2 ...` işleminde birleştirildi. Çapraz bağımlılıklar tek seferde çözülüyor.
 7. **Uzak URL'den İndirme ve Açma:** `http://` ve `https://` deb bağlantıları `cli.py`, `Main.py` ve `MainAdw.py` tarafından otomatik indirilip doğrudan açılabilir hale getirildi.
 8. **Çoklu Mimari (Multiarch) Denetimi:** `DebPackage.check_architecture()` ile yabancı mimarili paketlerde eksik mimari varsa otomatik tespit edilip çözüm komutu öneriliyor.
-9. **Sıfır Test Durumu:** Projeye 4 ayrı test paketi ve 15 adet otomatik birim/entegrasyon testi kazandırıldı (%100 geçiyor).
-
-### 📌 Uzun Vadeli Mimari Hedef (v2.0.0)
-- **Saf GTK 4 / Libadwaita'ya Tam Geçiş:**
-  - İleride GTK 3 desteği sistem genelinde sonlandırıldığında eski Glade 3 XML şablonu emekliye ayrılarak tek ve saf Libadwaita motoruna geçiş planlanmaktadır.
+9. **Sıfır Test Durumu:** Projeye 5 ayrı test paketi ve 24 adet otomatik birim/entegrasyon/arayüz testi kazandırıldı (`tests/run_all_tests.py` - %100 geçiyor).
+10. **Eski Glade 3 & GTK 3 Mirası:** 1.250 satırlık Glade XML ve `src/MainWindow.py` silindi; %100 saf GTK 4 / Libadwaita mimarisine geçildi.
 
 ---
 
-## 🚀 Gelecek Yol Haritası (Roadmap)
+## 🚀 Sürüm Yol Haritası (Roadmap)
 
 ### v1.1.0 (Tamamlanan Özellikler ✅)
 - [x] **🌐 Uzak URL'den Doğrudan İndirip İnceleme:** `parslinux-package-installer https://example.com/app.deb` komutu ve GUI indirme desteği sağlandı.
 - [x] **📦 Toplu Kurulumda Tek Seferlik APT Oturumu:** Tüm kuyruk tek bir PolicyKit oturumunda çapraz bağımlılıklarla kurulabiliyor.
 - [x] **🧩 Çoklu Mimari (Multiarch) Yardımcısı:** Eksik mimarili paketlerde `dpkg --add-architecture` önerisi eklendi.
 
-### v1.2.0 (Akıllı Paket Yönetimi)
+### v2.0.0 (Büyük Dönüşüm & Çoklu Dağıtım ✅)
+- [x] **💎 Saf GTK 4 / Libadwaita'ya Tam Geçiş:** Glade 3 XML'in tamamen kaldırılarak sadece Libadwaita arayüzünün bırakılması.
+- [x] **🏹 Arch Linux Desteği:** `.pkg.tar.zst` formatı, `pacman` eylem motoru ve AUR `PKGBUILD` paketleme desteği.
+- [x] **⚡ Polimorfik Paket Yükleyici:** `PackageLoader.open_package()` ile genişletilebilir modüler mimari.
+
+### v2.1.0 (Gelecek Hedefleri)
 - [ ] **🛡️ Btrfs / Timeshift Anlık Görüntü (Snapshot) Güvencesi:** Riskli paketler öncesi otomatik geri yükleme noktası.
 - [ ] **💡 Akıllı Alternatif / Flatpak Önerisi:** Depolarda olmayan paketler için Flathub entegrasyonu.
-
-### v2.0.0 (Büyük Dönüşüm)
-- [ ] **💎 Saf GTK 4 / Libadwaita'ya Tam Geçiş:** Glade 3 XML'in tamamen kaldırılarak sadece Libadwaita arayüzünün bırakılması.

@@ -4,33 +4,50 @@ Tüm önemli sürüm değişiklikleri bu dosyada belgelenmektedir. Format [Keep 
 
 ---
 
+## [2.0.0] - 2026-10-14
+
+### Eklendi
+- **Arch Linux & Çoklu Dağıtım Desteği (Multi-Distro Engine)**:
+  - `src/ArchPackage.py`: `.pkg.tar.zst`, `.pkg.tar.xz`, `.pkg.tar.gz` arşivlerini doğrudan okuma, `.PKGINFO` metaverilerini ve dosya ağacını ayrıştırma.
+  - `src/PackageLoader.py`: `.deb` ve `.pkg.tar.*` paketlerini polimorfik olarak otomatik açan evrensel yükleyici.
+  - `PKGBUILD` ve `.SRCINFO`: Standart Arch Linux ve AUR paketleme altyapısı.
+  - `pacman` desteği: Arch üzerinde `pacman -U` ve `pacman -Rns` komutlarıyla paket kurma ve kaldırma; `/var/lib/pacman/db.lck` kilit kontrolü.
+  - `debtap` köprüsü: Arch Linux üzerinde `.deb` açıldığında otomatik paket dönüştürme ve kurma.
+- **Toplu Paket Kurulum Kuyruğu (Batch Installer)**:
+  - Birden fazla paketi sürükleyip bırakarak veya dosya seçiciyle kuyruğa ekleme.
+  - Tek bir PolicyKit oturumu ile tüm kuyruğu tek seferde kurabilme.
+- **İçerilen Dosyalar Canlı Arama (Included Files)**:
+  - Arşiv içindeki tüm dosyaları izinleri, tür ikonları ve boyutlarıyla listeleme.
+  - Gerçek zamanlı arama kutusu ile anında filtreleme.
+- **Headless CLI Teftiş Modülü (`src/cli.py`)**:
+  - `-i, --info`: Grafik arayüz açmadan terminalde ayrıntılı metaveri dökümü.
+  - `-c, --check`: Bağımlılıkları kontrol edip eksik paketleri listeleme ve exit code üretme.
+- **Uzak URL'den Paket İndirme**:
+  - `http://` ve `https://` paket adreslerini geçici dizine indirip anında inceleme.
+- **Çoklu Mimari (Multiarch) Yardımcısı**:
+  - Yabancı mimarili paketlerde `dpkg --add-architecture` çözümü önerme.
+- **Genişletilmiş Test Paketi**:
+  - `tests/run_all_tests.py` ile 5 test paketinde birim, CLI, Libadwaita ve Arch entegrasyon testleri.
+
+### Değiştirildi & Temizlendi
+- **Saf GTK 4 & Libadwaita Mimarisi**:
+  - Eski `ui/MainWindow.glade` (1.250 satırlık XML) ve `src/MainWindow.py` tamamen emekliye ayrıldı.
+  - Ana uygulama doğrudan saf Python ile yazılan modern `src/MainWindowAdw.py` arayüzüne geçirildi.
+  - Kod tabanının %97.5'i doğrudan Pars Linux ekibi tarafından yazılmış hale geldi.
+- **Kaldırma UX Güvenliği**:
+  - Kazara paket silinmesini önleyen onay modal pencereleri eklendi.
+- **Changelog Temizliği**:
+  - Eski dağıtımın 300 satırlık log kalıntıları temizlendi.
+
+---
+
 ## [1.0.0] - 2026-10-13
 
 ### Eklendi
 - **Pars Linux Çatallanması (Fork)**: Proje `pardus-package-installer` temel alınarak Pars Linux için yeniden markalandı.
 - **`src/DebPackage.py` Hibrit Ayrıştırıcı**: `python3-apt` bulunmayan ortamlarda saf Python (`tarfile` ve `ar`) ile `.deb` paketlerini açma ve kontrol etme desteği.
-- **Akıllı Dosya Yakalama**: Dosya yöneticisinden çift tıklama (`%f` parametresi ve GApplication `do_open`), uçbirim yolu ve sürükle-bırak desteği.
-- **Gelişmiş Bağımlılık Raporlama**: Bağımlılıkların eksiksiz karşılanıp karşılanmadığını net yeşil/kırmızı durum göstergeleriyle sunma.
-- **Dinamik İşlem Butonu**: Kurulum (0), Sürüm Düşürme (1), Yeniden Kurulum (2), Yükseltme (3) ve Kaldırma durumları için akıllı durum makinesi.
+- **Akıllı Dosya Yakalama**: Dosya yöneticisinden çift tıklama (`%F` parametresi ve GApplication `do_open`), uçbirim yolu ve sürükle-bırak desteği.
+- **Gelişmiş Bağımlılık Raporlama**: Bağımlılıkların eksiksiz karşılanıp karşılanmadığını net durum göstergeleriyle sunma.
+- **Dinamik İşlem Butonu**: Kurulum, Sürüm Düşürme, Yeniden Kurulum, Yükseltme ve Kaldırma durumları için akıllı durum makinesi.
 - **Yeni Masaüstü ve Polkit Yapılandırması**: `org.parslinux.package-installer.desktop` ve `org.parslinux.pkexec.parslinux-package-installer.policy`.
 - **Kapsamlı Dokümantasyon Seti**: Mimari, kullanım, paketleme, test, CLI ve geliştirici kılavuzları.
-
-### Değiştirildi
-- Uygulama ID'si `org.parslinux.package-installer` olarak güncellendi.
-- Kök yetkili `Actions.py` betiğinde mutlak dosya yolu çözümlemesi ve gelişmiş kilit denetimi eklendi.
-- UI bileşenleri ve metinleri Pars Linux kimliğine uyarlandı.
-- Türkçe ve Portekizce dil dosyaları güncellendi.
-
----
-
-## [0.7.0] - 2026-03-06 (Yukarı Akış / Pardus)
-- Sürükle ve bırak desteği eklendi.
-- Arka plan iş parçacığı frontend ve backend olarak ikiye ayrıldı.
-- Bildirim sistemi optimize edildi.
-- Türkçe çeviriler güncellendi.
-
----
-
-## [0.6.5] - 2025-11-23 (Yukarı Akış / Pardus)
-- APT çıktı hata denetimlerine regex desteği eklendi.
-- Kilit hataları için bilgilendirme mesajları iyileştirildi.

@@ -10,9 +10,9 @@ Pars Linux Paket Kurucu (`parslinux-package-installer`) projesine ait teknik, ge
 |:---|:---|:---|
 | **Mimari Spesifikasyonu** | [ARCHITECTURE.md](ARCHITECTURE.md) | Modül yapısı, GApplication yaşam döngüsü, durum makinesi ve Polkit modeli |
 | **Kullanım Kılavuzu** | [KULLANIM_KILAVUZU.md](KULLANIM_KILAVUZU.md) | Grafik arayüz, paket açma yöntemleri, durum butonları ve sorun giderme |
-| **Kurulum Kılavuzu** | [INSTALL.md](INSTALL.md) | Depodan, `.deb` paketinden veya kaynaktan kurulum adımları |
-| **Uçbirim (CLI) Referansı** | [CLI_REFERENCE.md](CLI_REFERENCE.md) | Komut satırı parametreleri, bayraklar ve `Actions.py` parametreleri |
-| **Paketleme ve Dağıtım** | [PAKETLEME_VE_DAGITIM.md](PAKETLEME_VE_DAGITIM.md) | Debian `.deb` paketi derleme, MIME türleri, dosya yolları ve Polkit entegrasyonu |
+| **Kurulum Kılavuzu** | [INSTALL.md](INSTALL.md) | Debian (.deb), Arch Linux (PKGBUILD) veya kaynaktan kurulum adımları |
+| **Uçbirim (CLI) Referansı** | [CLI_REFERENCE.md](CLI_REFERENCE.md) | Komut satırı parametreleri, headless teftiş (-i/-c) ve `Actions.py` parametreleri |
+| **Paketleme ve Dağıtım** | [PAKETLEME_VE_DAGITIM.md](PAKETLEME_VE_DAGITIM.md) | Debian `.deb` ve Arch Linux `PKGBUILD` paketleme, MIME türleri ve Polkit entegrasyonu |
 | **Uygulama ve Dosya Bağlama** | [UYGULAMA_BAGLAMA.md](UYGULAMA_BAGLAMA.md) | MIME türleri, dosya yöneticileri entegrasyonu ve varsayılan uygulama ayarları |
 | **Geliştirici Kılavuzu** | [GELISTIRICI_KILAVUZU.md](GELISTIRICI_KILAVUZU.md) | Geliştirme ortamı, test senaryoları ve çeviri yönetimi |
 | **Geliştirici Yönergesi (AI / Agent)** | [CLAUDE.md](CLAUDE.md) | Kodlama standartları, hızlı komutlar ve mimari kuralları |
@@ -21,8 +21,8 @@ Pars Linux Paket Kurucu (`parslinux-package-installer`) projesine ait teknik, ge
 | **Değişiklik Günlüğü** | [CHANGELOG.md](CHANGELOG.md) | Sürüm geçmişi ve sürüm notları |
 | **Proje İlerlemesi** | [progress.md](progress.md) | Tamamlanan kilometre taşları ve gelecek hedefleri |
 | **Sürümleme Politikası** | [VERSION.md](VERSION.md) | SemVer 2.0.0 kuralları ve sürüm senkronizasyonu |
-| **Veri Tasarrufu ve Önbellek** | [DATA_SAVING_GUIDE.md](DATA_SAVING_GUIDE.md) | APT önbelleği ve çevrimdışı (offline) paket yönetimi |
-| **Yerel Depo Barındırma** | [SELF_HOSTING_GUIDE.md](SELF_HOSTING_GUIDE.md) | Kurumsal ve yerel `.deb` deposu kurma ve dağıtma |
+| **Veri Tasarrufu ve Önbellek** | [DATA_SAVING_GUIDE.md](DATA_SAVING_GUIDE.md) | APT ve Pacman önbelleği ile çevrimdışı (offline) paket yönetimi |
+| **Yerel Depo Barındırma** | [SELF_HOSTING_GUIDE.md](SELF_HOSTING_GUIDE.md) | Kurumsal ve yerel `.deb` / `.pkg.tar.zst` deposu kurma ve dağıtma |
 | **Kullanım Şartları** | [TERMS.md](TERMS.md) / [SARTLAR.md](SARTLAR.md) | Sorumluluk reddi ve lisans koşulları |
 | **Ödeme Kapsamı** | [PAYMENT_INTEGRATION.md](PAYMENT_INTEGRATION.md) | Yerel araç kapsamı ve Mağaza ilişkisi |
 | **Fork Notları** | [../FORK.md](../FORK.md) | Pardus Paket Kurucu'dan Pars Linux'a geçiş kararları |

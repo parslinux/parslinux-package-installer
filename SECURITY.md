@@ -8,7 +8,8 @@ Pars Linux ekibi olarak kullanıcılarımızın güvenliğini ve sistem bütünl
 
 | Sürüm | Destek Durumu |
 |:---|:---|
-| 1.0.x | :white_check_mark: Aktif Olarak Destekleniyor |
+| 2.0.x | :white_check_mark: Aktif Olarak Destekleniyor |
+| 1.x   | :warning: Güvenlik Güncellemeleri |
 | < 1.0 | :x: Desteklenmiyor |
 
 ---
@@ -17,10 +18,10 @@ Pars Linux ekibi olarak kullanıcılarımızın güvenliğini ve sistem bütünl
 
 `parslinux-package-installer` aşağıdaki güvenlik ilkelerine göre çalışır:
 
-1. **Ayrıcalıksız Grafik Arayüz**: Grafiksel arayüz (`src/MainWindow.py`), GTK pencereleri ve dosya inceleme mekanizmaları kesinlikle standart kullanıcı izinleriyle çalışır. Kök (`root`) yetkisi gerektirmez.
+1. **Ayrıcalıksız Grafik Arayüz**: Grafiksel arayüz (`src/MainWindowAdw.py` / `src/Main.py`), GTK 4 / Libadwaita pencereleri ve paket inceleme mekanizmaları kesinlikle standart kullanıcı izinleriyle çalışır. Kök (`root`) yetkisi gerektirmez.
 2. **Korumalı Yürütme**: Yalnızca paket kurulum ve kaldırma komutları (`src/Actions.py`) PolicyKit (`pkexec`) üzerinden denetlenir.
 3. **Kural Denetimi**: `/usr/share/polkit-1/actions/org.parslinux.pkexec.parslinux-package-installer.policy` dosyası yalnızca yetkili sistem yöneticilerinin paket işlem yapabilmesine izin verir.
-4. **Kilit Koruması**: Eşzamanlı paket yöneticisi çalıştırmalarından kaynaklanan veritabanı bozulmalarını önlemek için sistem APT kilitleri (`/var/lib/dpkg/lock-frontend`) her işlem öncesinde kontrol edilir.
+4. **Kilit Koruması**: Eşzamanlı paket yöneticisi çalıştırmalarından kaynaklanan veritabanı bozulmalarını önlemek için sistem paket kilitleri (Debian/Ubuntu için `/var/lib/dpkg/lock-frontend`, Arch Linux için `/var/lib/pacman/db.lck`) her işlem öncesinde kontrol edilir.
 
 ---
 

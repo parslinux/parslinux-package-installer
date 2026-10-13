@@ -1,23 +1,24 @@
 # Pars Linux Paket Kurucu — Geliştirici Kılavuzu
 
-Bu rehber, `parslinux-package-installer` kod tabanına katkıda bulunmak, yerel geliştirme ortamı kurmak, testler çalıştırmak ve çevirileri yönetmek isteyen geliştiriciler içindir.
+Bu rehber, `parslinux-package-installer` kod tabanına katkıda bulunmak, yerel geliştirme ortamı kurmak, birim ve entegrasyon testlerini çalıştırmak ve çevirileri yönetmek isteyen geliştiriciler içindir.
 
 ---
 
 ## 1. Geliştirme Ortamı Kurulumu
 
-Uygulama Python 3 ve PyGObject (GTK+ 3) üzerine kuruludur.
+Uygulama Python 3, PyGObject ve **GTK 4 / Libadwaita** üzerine kuruludur.
 
 ### 1.1. Debian / Pars Linux Tabanlı Sistemlerde:
 ```bash
 sudo apt update
-sudo apt install -y python3-all python3-gi python3-apt gir1.2-gtk-3.0 gir1.2-notify-0.7 gettext glade
+sudo apt install -y python3-all python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-notify-0.7 zstd policykit-1 gettext
+# İsteğe bağlı
+sudo apt install python3-apt
 ```
 
 ### 1.2. Arch Linux Tabanlı Geliştirme Ortamlarında:
-Sistemde `python-apt` bulunmasa dahi geliştirilen `DebPackage.py` saf Python ayrıştırıcısı sayesinde arayüz ve paket inceleme özellikleri test edilebilir:
 ```bash
-sudo pacman -S python python-gobject gtk3 libnotify gettext glade
+sudo pacman -S python python-gobject gtk4 libadwaita libnotify zstd polkit gettext
 ```
 
 ---
@@ -30,92 +31,46 @@ Projeyi klonladıktan sonra doğrudan geliştirme dizininden çalıştırabilirs
 # Boş karşılama ekranını açmak için:
 python3 src/Main.py
 
-# Belirli bir .deb paketini incelemek için:
+# Belirli bir .deb veya .pkg.tar.zst paketini incelemek için:
 python3 src/Main.py /yol/paket.deb
-```
+python3 src/Main.py /yol/paket.pkg.tar.zst
 
-Veya kök dizindeki çalıştırıcı betikle:
+# Çoklu paket ile toplu kurulum kuyruğunu test etmek için:
+python3 src/Main.py pkg1.deb pkg2.deb
 
-```bash
-./parslinux-package-installer [paket.deb]
+# Headless CLI teftiş modlarını test etmek için:
+python3 src/Main.py -i pkg1.deb
+python3 src/Main.py -c pkg1.deb
 ```
 
 ---
 
-## 3. Test Paketi Oluşturma
+## 3. Kod Yapısı ve Modüller
 
-Hızlıca yerel bir test `.deb` paketi üretmek için Python'un `tarfile` ve `io` kütüphanelerinden faydalanabilirsiniz:
-
-```python
-import io, tarfile, time, os
-
-os.makedirs("scratch", exist_ok=True)
-control_text = """Package: ornek-uygulama
-Version: 1.0.0
-Architecture: all
-Maintainer: Pars Linux <dev@parslinux.org>
-Installed-Size: 10
-Depends: bash
-Section: utils
-Description: Test Paketi
- Pars Linux Paket Kurucu testleri icin ornek paket.
-"""
-
-c_buf = io.BytesIO()
-with tarfile.open(fileobj=c_buf, mode="w:gz") as tar:
-    data = control_text.encode("utf-8")
-    ti = tarfile.TarInfo("./control")
-    ti.size = len(data)
-    ti.mtime = int(time.time())
-    tar.addfile(ti, io.BytesIO(data))
-
-d_buf = io.BytesIO()
-with tarfile.open(fileobj=d_buf, mode="w:gz") as tar:
-    content = b"echo 'Merhaba'\n"
-    ti = tarfile.TarInfo("./usr/bin/ornek")
-    ti.size = len(content)
-    ti.mtime = int(time.time())
-    tar.addfile(ti, io.BytesIO(content))
-
-def make_ar_entry(name, content):
-    name_bytes = name.encode("ascii").ljust(16)
-    mtime = str(int(time.time())).encode("ascii").ljust(12)
-    owner = b"0     "
-    group = b"0     "
-    mode = b"100644  "
-    size = str(len(content)).encode("ascii").ljust(10)
-    pad = b"\n" if len(content) % 2 == 1 else b""
-    return name_bytes + mtime + owner + group + mode + size + b"`\n" + content + pad
-
-with open("scratch/ornek-uygulama_1.0.0_all.deb", "wb") as f:
-    f.write(b"!<arch>\n")
-    f.write(make_ar_entry("debian-binary", b"2.0\n"))
-    f.write(make_ar_entry("control.tar.gz", c_buf.getvalue()))
-    f.write(make_ar_entry("data.tar.gz", d_buf.getvalue()))
-```
+* **`src/Main.py`**: Libadwaita `ApplicationAdw` uygulamasının ana giriş noktası, CLI argüman ayrıştırıcısı.
+* **`src/MainWindowAdw.py`**: Saf Python ile oluşturulmuş GTK 4 / Libadwaita ana penceresi (detaylar, canlı arama, toplu kuyruk).
+* **`src/PackageLoader.py`**: Evrensel paket fabrikası (`open_package`, `is_supported_package`, `is_arch_system`).
+* **`src/ArchPackage.py`**: `.pkg.tar.zst` arşivlerini açan, `.PKGINFO` ayrıştıran ve pacman ile denetleyen motor.
+* **`src/DebPackage.py`**: `.deb` arşivlerini açan, `control` dosyasını ayrıştıran ve bağımlılıkları denetleyen motor.
+* **`src/Actions.py`**: Kök yetkisiyle (`pkexec`) APT ve Pacman işlemlerini yürüten kilit denetimli backend.
+* **`src/cli.py`**: Terminalde `-i` ve `-c` dökümleri sunan arayüzsüz modül.
 
 ---
 
 ## 4. Testleri Çalıştırma
 
-Kod tabanındaki bağımsız ayrıştırıcıyı, arayüz yüklemesini ve sinyal geçişlerini doğrulamak için:
+Projedeki tüm birim, entegrasyon, CLI ve arayüz testleri tek bir komutla çalıştırılabilir:
 
 ```bash
-python3 -c '
-import sys
-sys.path.insert(0, "src")
-import gi
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gio, GLib
-from DebPackage import DebPackage
-from MainWindow import MainWindow
-
-pkg = DebPackage("scratch/ornek-uygulama_1.0.0_all.deb")
-assert pkg.pkgname == "ornek-uygulama"
-assert pkg["Version"] == "1.0.0"
-print("DebPackage Test: OK")
-'
+python3 tests/run_all_tests.py
 ```
+
+Tekil test modülleri:
+* `python3 tests/test_arch_package.py` — Arch Linux motoru testleri
+* `python3 tests/test_batch_queue.py` — Toplu kuyruk testleri
+* `python3 tests/test_included_files.py` — Dosya ağacı ayrıştırma testleri
+* `python3 tests/test_cli_modernization.py` — Headless CLI ve AppStream testleri
+* `python3 tests/test_gui_integration.py` — Libadwaita pencere yaşam döngüsü testleri
 
 ---
 
@@ -123,23 +78,11 @@ print("DebPackage Test: OK")
 
 Yeni bir metin eklendiğinde veya var olanlar güncellendiğinde:
 
-1. Metnin kodda `_("Metin")` veya Glade içinde `translatable="yes"` olarak işaretlendiğinden emin olun.
-2. `po/files` listesine gerekirse yeni dosya ekleyin.
-3. Çevirileri tazelemek için betiği çalıştırın:
+1. Metnin kod içinde `_("Metin")` şeklinde sarmalandığından emin olun.
+2. `po/files` listesinde dosyanızın yer aldığını doğrulayın.
+3. Çeviri şablonunu güncellemek için betiği çalıştırın:
    ```bash
-   ./update-translations.sh
+   bash update-translations.sh
    ```
 4. `po/tr.po` ve `po/pt.po` dosyalarındaki çevirileri tamamlayın.
-5. `setup.py` çalıştırıldığında `.mo` ikili dosyaları otomatik üretilir.
-
----
-
-## 6. Arayüzü (UI) Düzenleme
-
-Arayüz `ui/MainWindow.glade` dosyası içerisindedir. Glade görsel aracı ile düzenlenebilir:
-
-```bash
-glade ui/MainWindow.glade
-```
-
-Düzenleme yaparken bileşen id'lerinin (`mainwindow`, `mainstack`, `button1`, `button2`, `pacname`, `errorlabel` vb.) `src/MainWindow.py` içerisindeki bağlayıcılarla uyumlu kalmasına dikkat edilmelidir.
+5. `setup.py` çalıştırıldığında `.mo` dosyaları otomatik derlenir.

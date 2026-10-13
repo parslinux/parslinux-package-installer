@@ -25,7 +25,10 @@ Pars Linux projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Aç
    ```bash
    git checkout -b fix/hata-cozumu
    ```
-3. Değişikliklerinizi yapın ve yerel testleri çalıştırın.
+3. Değişikliklerinizi yapın ve yerel testleri çalıştırın:
+   ```bash
+   python3 tests/run_all_tests.py
+   ```
 4. Git commit mesajlarınızı Conventional Commits standardına uygun yazın:
    * `feat: ...` — Yeni bir özellik
    * `fix: ...` — Bir hatanın giderilmesi
@@ -39,5 +42,7 @@ Pars Linux projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Aç
 ## 3. Kod Standartları
 
 * Kodlar PEP 8 kurallarına uygun, temiz ve okunabilir olmalıdır.
+* Grafik arayüz bileşenleri saf **GTK 4 / Libadwaita** widget hiyerarşisine uymalıdır.
+* Paket işlemleri doğrudan spesifik sınıflar yerine `PackageLoader.open_package()` polimorfizmi üzerinden yürütülmelidir.
 * Kullanıcı arayüzünde gösterilecek metinler `_("Metin")` ile uluslararasılaştırma fonksiyonuna sarılmalıdır.
-* Geliştirilen yeni modüller geriye dönük uyumluluğu ve `python3-apt` bulunmayan ortamları göz önünde bulundurmalıdır.
+* Geliştirilen yeni modüller hem Debian/Ubuntu (`python3-apt`) hem de Arch Linux tabanlı ortamları desteklemelidir.

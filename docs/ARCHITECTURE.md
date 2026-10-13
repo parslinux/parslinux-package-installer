@@ -6,69 +6,94 @@ Bu doküman, `parslinux-package-installer` uygulamasının teknik mimarisini, bi
 
 ## 1. Genel Mimari Bakış
 
-Uygulama, zayıf bağlı (loosely-coupled) bir model izleyerek kullanıcı arayüzü (GTK 3 ve GTK 4 / Libadwaita), paket inceleme/çözümleme motoru (`DebPackage`), ayrıcalık yükseltme (Polkit `pkexec`) ve sistem paket yöneticisi (`apt`/`dpkg`) katmanlarını birbirinden ayırır.
+Uygulama, zayıf bağlı (loosely-coupled) bir model izleyerek kullanıcı arayüzü (saf **GTK 4 / Libadwaita**), evrensel paket yükleyici ve inceleme motoru (`PackageLoader`, `DebPackage`, `ArchPackage`), ayrıcalık yükseltme (Polkit `pkexec`) ve çift sistem paket yöneticisi (`apt` / `pacman`) katmanlarını birbirinden ayırır.
 
 ```mermaid
 graph TD
     User([Kullanıcı / Dosya Yöneticisi]) -->|Tekli / Toplu Parametre / DND| Entry[parslinux-package-installer]
-    Entry -->|Varsayılan GTK3| Main[src/Main.py]
-    Entry -->|--adw / --gtk4 Bayrağı| MainAdw[src/MainAdw.py]
+    CLI[Headless Terminal] -->|-i / -c Bayrakları| CliMod[src/cli.py]
+    Entry -->|GApplication Giriş| Main[src/Main.py]
+    Main -->|Libadwaita UI Motoru| WinAdw[src/MainWindowAdw.py]
     
-    Main -->|Pencere Yönetimi| Win[src/MainWindow.py]
-    Win -->|UI Tanımı| Glade[ui/MainWindow.glade]
-    MainAdw -->|GTK4 / Libadwaita UI| WinAdw[src/MainWindowAdw.py]
+    WinAdw -->|Paket Yükleme Talebi| PkgLoader[src/PackageLoader.py]
+    CliMod -->|Paket Yükleme Talebi| PkgLoader
     
-    Win -->|Paket İnceleme & Dosya Listesi| DebPkg[src/DebPackage.py]
-    WinAdw -->|Paket İnceleme & Dosya Listesi| DebPkg
+    PkgLoader -->|.deb Dosyası| DebPkg[src/DebPackage.py]
+    PkgLoader -->|.pkg.tar.* Dosyası| ArchPkg[src/ArchPackage.py]
     
-    subgraph Sistem ve Çözümleme Katmanı
+    subgraph Debian / APT Katmanı
         DebPkg -->|Tercih Edilen| PyApt[python3-apt / apt.Cache]
         DebPkg -->|Yedek / Fallback| Standalone[Saf Python AR & Tar Ayrıştırıcı]
         PyApt -->|Durum Sorgusu| DpkgDb[(/var/lib/dpkg/status)]
     end
     
-    Win -->|Tekli / Toplu Kurulum İsteği| Polkit[pkexec / Polkit Daemon]
-    WinAdw -->|Tekli / Toplu Kurulum İsteği| Polkit
+    subgraph Arch / Pacman Katmanı
+        ArchPkg -->|Metaveri| PkgInfo[.PKGINFO Parser]
+        ArchPkg -->|Arşiv Açma| ZstdTar[zstd / tarfile Akışı]
+        ArchPkg -->|Sürüm & Bağımlılık| PacmanQ[pacman -Q / vercmp]
+    end
+    
+    WinAdw -->|Tekli / Toplu Kurulum Talebi| Polkit[pkexec / Polkit Daemon]
     Polkit -->|Yetkilendirme Onayı| Actions[src/Actions.py]
-    Actions -->|Kilit Denetimi| Locks[/var/lib/dpkg/lock-frontend]
-    Actions -->|APT İşlemi| AptBin[/usr/bin/apt]
-    AptBin -->|Status-Fd Çıktısı| Win
+    
+    subgraph İşlem Yürütücü Motor
+        Actions -->|Debian Ortamı| AptEngine[apt install / remove]
+        Actions -->|Arch Ortamı| PacmanEngine[pacman -U / -Rns]
+        Actions -->|Arch'ta .deb| DebtapBridge[debtap Dönüştürücü]
+    end
+    
+    AptEngine -->|Canlı Terminal Çıktısı| WinAdw
+    PacmanEngine -->|Canlı Terminal Çıktısı| WinAdw
 ```
 
 ---
 
 ## 2. Temel Modüller ve Rolleri
 
-### 2.1. `src/Main.py` (GTK3 GApplication Yönetimi)
+### 2.1. `src/Main.py` (Libadwaita GApplication Giriş Noktası)
 * **GApplication Kimliği**: `org.parslinux.package-installer`
-* **Bayraklar**: `Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE`
 * **Görevi**: 
-  * Dosya yöneticisinden çift tıklandığında veya toplu seçim yapıldığında gelen `do_open` sinyallerini karşılar.
+  * Dosya yöneticisinden çift tıklamayla veya toplu seçimle gelen `do_open` sinyallerini karşılar.
   * Uçbirimden tekli veya çoklu argümanla başlatıldığında `do_activate` sinyalini yönetir (Tek dosya ise doğrudan paket görünümü, çoklu ise toplu kuyruk görünümü).
+  * `-i` ve `-c` bayrakları verildiğinde grafik arayüz yüklemeden `src/cli.py` modülüne delege eder.
 
-### 2.2. `src/MainWindow.py` (GTK3 Denetleyici ve Durum Makinesi)
-* **Arayüz Durumları**:
-  * `empty`: Paket yüklenmediğinde karşılama ve sürükle-bırak hedefi.
-  * `package`: Paket bilgileri, sürüm rozetleri ve dinamik eylem butonları (Kur / Kaldır / Yükselt / Sürüm Düşür).
-  * `batch`: Toplu paket kurulum kuyruğu (`BatchBox`).
-  * `broken`: Bozuk sistem veya bağımlılık hatası.
-  * `brokendeb`: Bozuk `.deb` arşivi.
-* **İçerilen Dosyalar Arama ve Filtreleme**: `GtkSearchEntry`, `GtkTreeModelFilter` ve `GtkTreeView` entegrasyonu ile arşiv içeriğindeki dosyaları gerçek zamanlı filtreler.
-* **Toplu Kurulum Kuyruğu**: Arka plan iş parçacığında (`_batch_worker`) sırayla `Actions.py` çalıştırarak durum ikonlarını ve genel ilerleme çubuğunu günceller.
+### 2.2. `src/MainWindowAdw.py` (Modern GTK4 / Libadwaita Arayüzü)
+* Saf GTK 4 ve Libadwaita (`Adw.ApplicationWindow`, `Adw.ToolbarView`, `Adw.HeaderBar`, `Adw.ToastOverlay`) kullanır.
+* **Arayüz Durumları (`Adw.ViewStack`)**:
+  * `empty`: Paket yüklenmediğinde karşılama ve sürükle-bırak hedefi (`Adw.StatusPage`).
+  * `package`: Paket bilgileri, sürüm rozetleri, içerilen dosyalar canlı arama sekmesi ve dinamik eylem butonları (Kur / Kaldır / Yükselt / Sürüm Düşür).
+  * `batch`: Toplu paket kurulum kuyruğu (`Adw.ActionRow` listesi, onay kutuları ve toplam boyut özeti).
+  * `broken`: Bozuk paket veya bağımlılık hatası uyarısı.
+* **Canlı Dosya Ağacı**: Paket içerisindeki dosyaları tür ikonları (klasör, çalıştırılabilir, sembolik bağ, metin) ve boyutlarıyla anında filtreler.
 
-### 2.3. `src/MainAdw.py` & `src/MainWindowAdw.py` (Modern GTK4 / Libadwaita Motoru)
-* Saf GTK 4 ve Libadwaita (`Adw.Application`, `Adw.ApplicationWindow`, `Adw.ToolbarView`, `Adw.HeaderBar`) kullanır.
-* `Adw.StatusPage` ile karşılama ve hata sayfaları, `Adw.PreferencesGroup` ve `Adw.ActionRow` ile sistem ayarlarına uyumlu paket detayları sunar.
-* GNOME / Pars Linux modern masaüstü standartlarına tam uyumludur.
+### 2.3. `src/PackageLoader.py` (Evrensel Paket Yükleyici)
+* Polimorfik paket fabrikasıdır:
+  * `is_supported_package(path)`: Dosyanın `.deb` mi yoksa `.pkg.tar.*` mı olduğunu doğrular.
+  * `open_package(path, cache=...)`: Arşiv uzantısına göre otomatik olarak `DebPackage` veya `ArchPackage` nesnesi üretir.
+  * `is_arch_system()`: Çalışan sistemin Arch Linux tabanlı olup olmadığını tespit eder.
 
-### 2.4. `src/DebPackage.py` (Bağımsız Hibrit Paket Motoru)
+### 2.4. `src/ArchPackage.py` (Arch Linux Doğal Paket Motoru)
+* `.pkg.tar.zst`, `.pkg.tar.xz`, `.pkg.tar.gz` arşivlerini çözer.
+* `.PKGINFO` metaverilerini anahtar/değer çiftleri olarak ayrıştırır (`pkgname`, `pkgver`, `pkgdesc`, `depends`, `optdepends`, vb.).
+* `zstd` açıcı akışıyla arşiv dosya ağacını ve izinlerini listeler.
+* `pacman -Q` ve `vercmp` yardımıyla sistemde kurulu sürümü sorgular ve mimari uyumluluğunu kontrol eder.
+
+### 2.5. `src/DebPackage.py` (Debian Paket Motoru)
 * Hibrit çalışma mantığı: `python3-apt` varsa sistem kütüphanesini kullanır, yoksa dahili saf Python AR ve Tar arşiv ayrıştırıcısı ile çalışır.
-* `get_file_details()` metoduyla her bir dosya üyesinin adı, boyutu, türü (dizin, dosya, sembolik bağ) ve çalıştırılabilir bitlerini anında raporlar.
+* `get_file_details()` metoduyla her bir dosya üyesinin adı, boyutu, türü (dizin, dosya, sembolik bağ) ve izin modlarını raporlar.
+* Mimari uyumsuzluğu ve eksik bağımlılıkları denetler.
 
-### 2.5. `src/Actions.py` (Ayrıcalıklı Kurulum ve Kaldırma Yardımcısı)
-* Yalnızca `root` yetkisiyle `pkexec` üzerinden çağrılır.
-* APT kilit dosyasını (`/var/lib/dpkg/lock-frontend`) denetler; kilit meşgulse işlem yapmadan 256 çıkış koduyla kullanıcıyı uyarır.
-* Çoklu paket yollarını tek bir `apt install <yollar...>` çağrısında toplu kurabilir.
+### 2.6. `src/Actions.py` (Ayrıcalıklı Kurulum ve Kaldırma Yardımcısı)
+* Yalnızca `root` yetkisiyle PolicyKit (`pkexec`) üzerinden çağrılır.
+* **Debian Ortamında**: `/var/lib/dpkg/lock-frontend` kilit kontrolü yapar; `apt install` veya `apt remove` yürütür.
+* **Arch Linux Ortamında**: `/var/lib/pacman/db.lck` kilit kontrolü yapar; `pacman -U --noconfirm --needed` veya `pacman -Rns --noconfirm` yürütür.
+* **Arch'ta .deb Kurulumu**: Arch Linux üzerinde `.deb` verilmişse `debtap` aracı ile paketi dönüştürüp kurar.
+
+### 2.7. `src/cli.py` (Headless CLI Teftiş Modülü)
+* Grafik arayüz yüklemeden terminalde hızlı paket analizi ve doğrulama sağlar.
+* `cli_info()`: Paket metaverilerini (adı, sürümü, mimarisi, durumu, boyutu, açıklaması, bağımlılıkları) formatlı döküm olarak basar.
+* `cli_check()`: Bağımlılıkları kontrol edip eksik paketleri listeler ve script otomasyonları için exit code (0: başarılı, 1: eksik) döner.
+* Uzak URL'lerden HTTP/HTTPS paket indirme desteği sunar.
 
 ---
 
@@ -76,5 +101,7 @@ graph TD
 
 * `tests/test_included_files.py`: `DebPackage` dosya ayrıştırma ve metaveri doğruluğu.
 * `tests/test_batch_queue.py`: Toplu kurulum kuyruğu çoklu paket ayrıştırması.
-* `tests/test_gui_integration.py`: GTK 3 ve GTK 4 arayüz bileşenlerinin yaşam döngüsü.
+* `tests/test_cli_modernization.py`: CLI `-i` ve `-c` bayrakları, CSS ve AppStream XML kontrolleri.
+* `tests/test_arch_package.py`: Arch Linux paket metaverisi, `.PKGINFO`, zstd dosya ağacı ve pacman komut inşası.
+* `tests/test_gui_integration.py`: GTK 4 / Libadwaita Debian ve Arch pencere yaşam döngüsü testleri.
 * `tests/run_all_tests.py`: Tüm testleri süreç izolasyonuyla koşturan ana çalıştırıcı.

@@ -6,7 +6,7 @@
 
 ## 1. Dizin ve Dosya Yapısı
 
-* `po/files`: Çevrilebilir dizgelerin taranacağı kaynak dosyaların listesi (`ui/MainWindow.glade`, `src/MainWindow.py`, `src/DebPackage.py`).
+* `po/files`: Çevrilebilir dizgelerin taranacağı kaynak Python dosyalarının listesi (`src/MainWindowAdw.py`, `src/MainAdw.py`, `src/Main.py`, `src/DebPackage.py`, `src/ArchPackage.py`, `src/PackageLoader.py`, `src/cli.py`).
 * `po/parslinux-package-installer.pot`: Tüm çevrilebilir dizgeleri içeren ana şablon dosya.
 * `po/tr.po`: Türkçe çeviriler.
 * `po/pt.po`: Portekizce çeviriler.
@@ -16,7 +16,7 @@
 
 ## 2. Çevirileri Güncelleme İş Akışı
 
-1. Kaynak kod veya Glade dosyalarında yeni metinler eklendiğinde:
+1. Kaynak Python dosyalarında yeni metinler veya çevrilebilir dizgeler (`_("...")`) eklendiğinde:
    ```bash
    ./update-translations.sh
    ```
