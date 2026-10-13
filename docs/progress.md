@@ -97,7 +97,42 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 
 ---
 
-## 🚀 Gelecek Planları (Roadmap v1.1.0+)
-- [ ] Uzak URL'den `.deb` bağlantısı verildiğinde otomatik indirip inceleme desteği.
-- [ ] Flatpak / Snap dönüştürücü analiz modülü entegrasyonu.
-- [ ] Çoklu mimari (Multiarch) kütüphane çakışmalarında otomatik alternatif önerme.
+## 🔍 Teknik Borç Durumu ve Analizi
+
+### ✅ Çözülen Kritik Teknik Borçlar
+1. **GLib IO Channel Kilitlenmesi (Busy Loop / %100 CPU):** Süreç çıktısı kapandığında (`EOF`) `return False` verilerek işlemcinin kilitlenmesi önlendi.
+2. **zstd Sıkıştırma Engeli:** Standart Python kütüphanesinin zstd desteklememesi sorunu `_open_tar()` harici zstd fallback motoru ile çözüldü.
+3. **Sorgusuz Paket Silme:** "Kaldır" butonuna basıldığı an paket ve bağımlılıklarının anında silinmesi engellendi; modal onay pencereleri bağlandı.
+4. **Dile Bağımlı Hata Tespiti:** Yalnızca Türkçe/İngilizce harflere bakan regex evrenselleştirildi; APT ve dpkg kilit hataları dile bağımsız tespit ediliyor.
+5. **Açık Kalan Dosya Tanıtıcıları:** `__version__` dosyası okumaları `with open` context manager ile sarılarak `ResourceWarning` uyarıları giderildi.
+6. **Sıfır Test Durumu:** Projeye 4 ayrı test paketi ve 11 adet otomatik birim/entegrasyon testi kazandırıldı.
+
+### 📌 Kalan / Takip Edilen Mimari Teknik Borçlar
+1. **Çift Motor Bakım Yükü (Dual UI Architecture):**
+   - Şu anda hem eski GTK 3 (`MainWindow.py` + Glade XML) hem de modern GTK 4/Libadwaita (`MainWindowAdw.py`) paralel yaşamaktadır. Bu durum her yeni arayüz özelliğinin iki farklı kütüphaneye de uyarlanmasını gerektirir.
+2. **Toplu Kurulumda Çapraz Bağımlılık Çözümü:**
+   - Kuyruktaki paketler şu anda adım adım tek tek `pkexec` ile kurulmaktadır. Birbirine bağımlı paketler aynı kuyruktaysa, APT'nin bunları tek bir transaction içinde çözebilmesi için toplu liste olarak `apt install deb1 deb2` şeklinde tek oturumda gönderilmesi daha dayanıklı bir çözüm olacaktır.
+3. **Cache Güncelleme Mikro-Gecikmesi:**
+   - `update_cache()` işlemi ana iş parçacığında `apt.Cache()` sorgulamaktadır. Çok sayıda PPA deposu olan yavaş diskli sistemlerde hafif arayüz gecikmelerini önlemek için tamamen asenkron arka plana taşınabilir.
+
+---
+
+## 🚀 Gelecek Yol Haritası (Roadmap v1.1.0 - v2.0.0)
+
+### v1.1.0 (Yakın Gelecek)
+- [ ] **🌐 Uzak URL'den Doğrudan İndirip İnceleme:**
+  - `parslinux-package-installer https://example.com/app.deb` komutu veya arayüzden URL yapıştırma desteği.
+- [ ] **📦 Toplu Kurulumda Tek Seferlik APT Oturumu:**
+  - Kuyruktaki paketleri tek seferde `Actions.py install pkg1 pkg2 ...` şeklinde göndererek aralarındaki çapraz bağımlılıkları tek Polkit şifresiyle çözme.
+- [ ] **🧩 Çoklu Mimari (Multiarch) Yardımcısı:**
+  - `i386` veya farklı mimarili paketlerde sistemde eksik mimari varsa `dpkg --add-architecture` önerisi sunma.
+
+### v1.2.0 (Akıllı Paket Yönetimi)
+- [ ] **🛡️ Btrfs / Timeshift Anlık Görüntü (Snapshot) Güvencesi:**
+  - Riskli sistem paketleri kurulmadan/kaldırılmadan önce tek tıkla otomatik sistem geri yükleme noktası oluşturma.
+- [ ] **💡 Akıllı Alternatif / Flatpak Önerisi:**
+  - Depolarda bulunmayan veya kırık bağımlılığı olan paketler için Flathub üzerinde alternatif sürüm arayıp önerme.
+
+### v2.0.0 (Büyük Dönüşüm)
+- [ ] **💎 Saf GTK 4 / Libadwaita'ya Tam Geçiş:**
+  - Eski Glade 3 XML ve GTK 3 kodlarını tamamen emekliye ayırarak projeyi tek, saf ve ultra-hafif Libadwaita motoruna geçirme.
