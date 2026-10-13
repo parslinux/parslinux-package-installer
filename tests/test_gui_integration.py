@@ -40,7 +40,9 @@ class TestGuiIntegrations(unittest.TestCase):
                 "from gi.repository import Adw\n"
                 "from MainWindowAdw import MainWindowAdw\n"
                 "app = Adw.Application(application_id='org.parslinux.test.adw_sub')\n"
-                "deb_file = os.path.abspath('scratch/parslinux-editor_2.0.0_all.deb')\n"
+                "fixture = os.path.abspath('tests/fixtures/parslinux-editor_2.0.0_all.deb')\n"
+                "scratch = os.path.abspath('scratch/parslinux-editor_2.0.0_all.deb')\n"
+                "deb_file = fixture if os.path.exists(fixture) else scratch\n"
                 "def on_act(app):\n"
                 "    win = MainWindowAdw(app, deb_file)\n"
                 "    assert win.lbl_pkgname.get_label() == 'parslinux-editor'\n"
@@ -61,7 +63,9 @@ class TestGuiIntegrations(unittest.TestCase):
         from MainWindowAdw import MainWindowAdw
 
         app = Adw.Application(application_id='org.parslinux.test.adw2')
-        deb_file = os.path.join(os.path.dirname(__file__), '..', 'scratch', 'parslinux-editor_2.0.0_all.deb')
+        fixture = os.path.join(os.path.dirname(__file__), 'fixtures', 'parslinux-editor_2.0.0_all.deb')
+        scratch = os.path.join(os.path.dirname(__file__), '..', 'scratch', 'parslinux-editor_2.0.0_all.deb')
+        deb_file = fixture if os.path.exists(fixture) else scratch
 
         def on_act(app):
             win = MainWindowAdw(app, deb_file)
