@@ -1,3 +1,15 @@
+parslinux-package-installer (1.0.0) unstable; urgency=medium
+
+  * Fork and adapt as Pars Linux Package Installer (parslinux-package-installer)
+  - Graphical .deb package installer (GDebi equivalent)
+  - Enhanced dependency verification and resolution status
+  - Single-click install, reinstall, downgrade, and removal mechanism
+  - Pure-Python DebPackage fallback parser for environments without python-apt
+  - Modern desktop entry, Polkit policy, and Pars Linux branding
+  - Updated translations and system integration
+
+ -- Pars Linux Developers <dev@parslinux.org>  Tue, 13 Oct 2026 22:50:00 +0300
+
 pardus-package-installer (0.7.0) unstable; urgency=medium
 
   [ Fatih Altun ]

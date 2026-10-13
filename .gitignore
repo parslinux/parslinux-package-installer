@@ -1,4 +1,9 @@
 *.deb
 *.glade~
 *.idea
-__pycache__
+__pycache__/
+*.mo
+scratch/
+build/
+dist/
+*.egg-info/

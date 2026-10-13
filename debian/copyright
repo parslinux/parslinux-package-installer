@@ -1,11 +1,11 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: pardus-package-installer
-Upstream-Contact: Fatih Altun <fatih.altun@pardus.org.tr>
-Source: https://github.com/pardus/pardus-package-installer
-
+Upstream-Name: parslinux-package-installer
+Upstream-Contact: Pars Linux Developers <dev@parslinux.org>
+Source: https://parslinux.org
 
 Files: *
-Copyright: 2023, Pardus <dev@pardus.org.tr>
+Copyright: 2026, Pars Linux <dev@parslinux.org>
+           2020-2023, Pardus <dev@pardus.org.tr>
 License: GPL-3.0+
 
 License: GPL-3.0+
@@ -24,5 +24,3 @@ License: GPL-3.0+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
-
-

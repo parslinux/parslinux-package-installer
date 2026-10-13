@@ -1,49 +1,67 @@
-# Pardus Package Installer
+# Pars Linux Package Installer
 
-Pardus Package Installer is a application for install, uninstall or view deb packages.
+**Pars Linux Package Installer** (`parslinux-package-installer`), Pars Linux ve Debian tabanlı dağıtımlar için tasarlanmış, GDebi dengi modern ve hafif bir grafiksel `.deb` paket yöneticisidir.
 
-It is currently a work in progress. Maintenance is done by <a href="https://www.pardus.org.tr/">Pardus</a> team.
+İndirilen veya yerel diskte bulunan `.deb` dosyalarına dosya yöneticisinden çift tıklandığında otomatik olarak açılır, bağımlılıkları kontrol eder ve tek tıkla kurulum, yeniden kurulum, yükseltme, sürüm düşürme veya sistemden kaldırma imkânı tanır.
 
-## **Dependencies**
+---
 
-This application is developed based on Python3 and GTK+ 3. Dependencies:
+## 🚀 Özellikler
+
+- **Çift Tıklama ile Açılma**: `.deb` MIME türleri (`application/vnd.debian.binary-package`, `application/x-deb`, `application/x-debian-package`) ile tam entegre.
+- **Sürükle & Bırak Desteği**: İndirilen `.deb` dosyalarını pencereye sürükleyip bırakarak anında inceleme.
+- **Akıllı Bağımlılık Kontrolü**:
+  - Gerekli tüm bağımlılıkların karşılanıp karşılanmadığını (`All dependencies are satisfied`) doğrular.
+  - Eksik bağımlılıkları ve depolardan indirilecek ek paketleri listeler.
+  - Sistem mimarisi ile paket mimarisi (örn. `amd64`, `arm64`, `all`) uyumluluğunu denetler.
+- **Tek Tıkla Dinamik Kurulum / Kaldırma**:
+  - Paket kurulu değilse: **Kur** (`Install`)
+  - Paket daha yeni bir sürümse: **Yükselt** (`Upgrade`)
+  - Aynı sürüm sistemde mevcutsa: **Yeniden Kur** (`Reinstall`)
+  - Daha eski bir sürümse: **Sürüm Düşür** (`Downgrade`)
+  - Sistemde mevcutsa: **Kaldır** (`Uninstall`)
+- **Detaylı Paket Bilgisi**:
+  - Paket adı, sürüm, sistemde kurulu sürüm, açıklama, geliştirici/bakımcı, ana sayfa, bölüm ve paket boyutu.
+- **Güvenli Yetkilendirme (Polkit)**:
+  - Kurulum ve kaldırma işlemleri PolicyKit (`pkexec`) üzerinden güvenli root haklarıyla yönetilir.
+- **Canlı Konsol ve İlerleme Takibi**:
+  - APT çıktısını anlık olarak yüzdelik ilerleme çubuğu ve açılır terminal detaylarıyla görüntüler.
+
+---
+
+## 📦 Bağımlılıklar
+
 ```bash
 gir1.2-glib-2.0 gir1.2-gtk-3.0 gir1.2-notify-0.7 python3-apt
 ```
 
-### **Run Application from Source**
+---
 
-Install dependencies
+## 🛠️ Kaynaktan Çalıştırma
+
 ```bash
-gir1.2-glib-2.0 gir1.2-gtk-3.0 gir1.2-notify-0.7 python3-apt
-```
-Clone the repository
-```bash
-git clone https://github.com/pardus/pardus-package-installer.git ~/pardus-package-installer
-```
-Run application
-```bash
-python3 ~/pardus-package-installer/src/Main.py
+# Bağımlılıkların kurulu olduğundan emin olun
+python3 src/Main.py [dosya.deb]
 ```
 
-### **Build deb package**
+Veya doğrudan çalıştırıcı ile:
+
+```bash
+./parslinux-package-installer [dosya.deb]
+```
+
+---
+
+## 🔨 Paketleme (Debian Paketi Oluşturma)
 
 ```bash
 sudo apt install devscripts git-buildpackage
 sudo mk-build-deps -ir
-gbp buildpackage --git-export-dir=/tmp/build/pardus-package-installer -us -uc
+gbp buildpackage --git-export-dir=/tmp/build/parslinux-package-installer -us -uc
 ```
 
-### **Screenshots**
+---
 
-![Pardus Package Installer 1](screenshots/pardus-package-installer-1.png)
+## 📄 Lisans
 
-![Pardus Package Installer 2](screenshots/pardus-package-installer-2.png)
-
-![Pardus Package Installer 3](screenshots/pardus-package-installer-3.png)
-
-![Pardus Package Installer 4](screenshots/pardus-package-installer-4.png)
-
-![Pardus Package Installer 5](screenshots/pardus-package-installer-5.png)
-
-![Pardus Package Installer 6](screenshots/pardus-package-installer-6.png)
+GPL-3.0+ — Ayrıntılar için [LICENSE](LICENSE) ve [FORK.md](FORK.md) dosyalarına bakınız.

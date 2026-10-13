@@ -9,50 +9,53 @@ from setuptools import setup, find_packages
 def create_mo_files():
     podir = "po"
     mo = []
-    for po in os.listdir(podir):
-        if po.endswith(".po"):
-            os.makedirs("{}/{}/LC_MESSAGES".format(podir, po.split(".po")[0]), exist_ok=True)
-            mo_file = "{}/{}/LC_MESSAGES/{}".format(podir, po.split(".po")[0], "pardus-package-installer.mo")
-            msgfmt_cmd = 'msgfmt {} -o {}'.format(podir + "/" + po, mo_file)
-            subprocess.call(msgfmt_cmd, shell=True)
-            mo.append(("/usr/share/locale/" + po.split(".po")[0] + "/LC_MESSAGES",
-                       ["po/" + po.split(".po")[0] + "/LC_MESSAGES/pardus-package-installer.mo"]))
+    if os.path.exists(podir):
+        for po in os.listdir(podir):
+            if po.endswith(".po"):
+                lang = po.split(".po")[0]
+                lang_dir = f"{podir}/{lang}/LC_MESSAGES"
+                os.makedirs(lang_dir, exist_ok=True)
+                mo_file = f"{lang_dir}/parslinux-package-installer.mo"
+                msgfmt_cmd = f"msgfmt {podir}/{po} -o {mo_file}"
+                subprocess.call(msgfmt_cmd, shell=True)
+                mo.append((f"/usr/share/locale/{lang}/LC_MESSAGES", [mo_file]))
     return mo
 
 
 changelog = "debian/changelog"
-version = "0.1.0"
+version = "1.0.0"
 if os.path.exists(changelog):
-    head = open(changelog).readline()
     try:
+        head = open(changelog).readline()
         version = head.split("(")[1].split(")")[0]
-    except:
-        print("debian/changelog format is wrong for get version")
-    f = open("src/__version__", "w")
+    except Exception:
+        pass
+
+os.makedirs("src", exist_ok=True)
+with open("src/__version__", "w") as f:
     f.write(version)
-    f.close()
 
 data_files = [
-    ("/usr/share/applications", ["tr.org.pardus.package-installer.desktop"]),
-    ("/usr/share/pardus/pardus-package-installer/ui", ["ui/MainWindow.glade"]),
-    ("/usr/share/pardus/pardus-package-installer/src",
-     ["src/Actions.py", "src/Main.py", "src/MainWindow.py", "src/__version__"]),
-    ("/usr/bin", ["pardus-package-installer"]),
-    ("/usr/share/polkit-1/actions", ["tr.org.pardus.pkexec.pardus-package-installer.policy"]),
-    ("/usr/share/icons/hicolor/scalable/apps/", ["images/pardus-package-installer.svg"])
+    ("/usr/share/applications", ["org.parslinux.package-installer.desktop"]),
+    ("/usr/share/parslinux/parslinux-package-installer/ui", ["ui/MainWindow.glade"]),
+    ("/usr/share/parslinux/parslinux-package-installer/src",
+     ["src/Actions.py", "src/Main.py", "src/MainWindow.py", "src/DebPackage.py", "src/__version__"]),
+    ("/usr/bin", ["parslinux-package-installer", "pardus-package-installer"]),
+    ("/usr/share/polkit-1/actions", ["org.parslinux.pkexec.parslinux-package-installer.policy"]),
+    ("/usr/share/icons/hicolor/scalable/apps/", ["images/parslinux-package-installer.svg"])
 ] + create_mo_files()
 
 setup(
-    name="Pardus Package Installer",
+    name="Pars Linux Package Installer",
     version=version,
     packages=find_packages(),
-    scripts=["pardus-package-installer"],
+    scripts=["parslinux-package-installer"],
     install_requires=["PyGObject"],
     data_files=data_files,
-    author="Fatih Altun",
-    author_email="fatih.altun@pardus.org.tr",
-    description="Pardus Deb Package Installer.",
+    author="Pars Linux Developers",
+    author_email="dev@parslinux.org",
+    description="Pars Linux Deb Package Installer (GDebi Equivalent)",
     license="GPLv3",
-    keywords="deb package installer",
-    url="https://github.com/pardus/pardus-package-installer",
+    keywords="deb package installer parslinux gdebi",
+    url="https://parslinux.org",
 )

@@ -1,6 +1,15 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+import os
 import sys
 
-sys.path.insert(0, '/usr/share/pardus/pardus-package-installer/src/')
-import Main
+# Forward to parslinux-package-installer
+script_dir = os.path.dirname(os.path.abspath(__file__))
+parslinux_bin = os.path.join(script_dir, "parslinux-package-installer")
+
+if os.path.exists(parslinux_bin):
+    os.execv(sys.executable, [sys.executable, parslinux_bin] + sys.argv[1:])
+else:
+    sys.path.insert(0, '/usr/share/parslinux/parslinux-package-installer/src/')
+    import Main

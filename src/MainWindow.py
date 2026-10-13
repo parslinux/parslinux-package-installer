@@ -1,34 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 24 14:58:17 2020
-
-@author: fatih
+MainWindow for parslinux-package-installer.
+Provides graphical package installation, removal, dependency verification,
+and detailed inspection of .deb packages.
 """
+
+import locale
+from locale import gettext as _
 import os
 import re
+from subprocess import PIPE, Popen
 import sys
+import threading
 
-import apt
 import gi
 
 gi.require_version('Gtk', '3.0')
 gi.require_version("Notify", "0.7")
-from gi.repository import Gtk, GObject, GLib, Gdk, Gio, Notify
-import apt.debfile as aptdeb
-from subprocess import PIPE, Popen
-import threading
+from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Notify
 
-import locale
-from locale import gettext as _
+from DebPackage import DebPackage, HAVE_APT
 
-locale.bindtextdomain('pardus-package-installer', '/usr/share/locale')
-locale.textdomain('pardus-package-installer')
+if HAVE_APT:
+    import apt
+
+locale.bindtextdomain('parslinux-package-installer', '/usr/share/locale')
+locale.textdomain('parslinux-package-installer')
 
 
 class MainWindow(object):
     def __init__(self, application, file):
-
         self.closestatus = False
         self.error = False
         self.dpkglockerror = False
@@ -43,9 +45,17 @@ class MainWindow(object):
         self.isbroken = False
         self.debianpackage_errormsg = ""
         self.pid = None
+        self.package = None
+        self.cache = None
 
-        # Gtk Builder
-        self.MainWindowUIFileName = os.path.dirname(os.path.abspath(__file__)) + "/../ui/MainWindow.glade"
+        # Gtk Builder UI file resolution
+        ui_system = "/usr/share/parslinux/parslinux-package-installer/ui/MainWindow.glade"
+        ui_local = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ui", "MainWindow.glade")
+        if os.path.exists(ui_system):
+            self.MainWindowUIFileName = ui_system
+        else:
+            self.MainWindowUIFileName = os.path.abspath(ui_local)
+
         try:
             self.builder = Gtk.Builder.new_from_file(self.MainWindowUIFileName)
             self.builder.connect_signals(self)
@@ -60,20 +70,22 @@ class MainWindow(object):
 
         self.mainstack.set_visible_child_name("splash")
 
-        # Set version
-        # If not getted from __version__ file then accept version in MainWindow.glade file
+        # Set version from __version__ file or default
         try:
-            version = open(os.path.dirname(os.path.abspath(__file__)) + "/__version__").readline()
-            self.about_dialog.set_version(version)
-        except:
+            ver_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "__version__")
+            if os.path.exists(ver_file):
+                version = open(ver_file).readline().strip()
+                self.about_dialog.set_version(version)
+        except Exception:
             pass
-        self.about_dialog.set_program_name(_("Pardus Package Installer"))
+
+        self.about_dialog.set_program_name(_("Pars Linux Package Installer"))
         if self.about_dialog.get_titlebar() is None:
             about_headerbar = Gtk.HeaderBar.new()
             about_headerbar.set_show_close_button(True)
-            about_headerbar.set_title(_("About Pardus Package Installer"))
+            about_headerbar.set_title(_("About Pars Linux Package Installer"))
             about_headerbar.pack_start(
-                Gtk.Image.new_from_icon_name("pardus-package-installer", Gtk.IconSize.LARGE_TOOLBAR))
+                Gtk.Image.new_from_icon_name("parslinux-package-installer", Gtk.IconSize.LARGE_TOOLBAR))
             about_headerbar.show_all()
             self.about_dialog.set_titlebar(about_headerbar)
 
@@ -96,15 +108,41 @@ class MainWindow(object):
 
         threading.Thread(target=self.worker, daemon=True).start()
 
+    def get_actions_script(self):
+        """Resolve path to Actions.py script."""
+        system_path = "/usr/share/parslinux/parslinux-package-installer/src/Actions.py"
+        if os.path.exists(system_path):
+            return system_path
+        local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Actions.py")
+        if os.path.exists(local_path):
+            return local_path
+        return system_path
+
     def worker(self):
         result = self.initialize_backend()
         GLib.idle_add(self.initialize_ui, result)
 
     def initialize_backend(self):
         if not self.file:
-            return {"state": "empty"}
+            # Check if an argument was passed on command line
+            if len(sys.argv) > 1 and not sys.argv[1].startswith("-") and os.path.exists(sys.argv[1]):
+                self.debianpackage = os.path.abspath(sys.argv[1])
+            else:
+                return {"state": "empty"}
+        else:
+            if hasattr(self.file, "get_path"):
+                self.debianpackage = os.path.abspath(self.file.get_path())
+            elif isinstance(self.file, str):
+                self.debianpackage = os.path.abspath(self.file)
+            else:
+                return {"state": "empty"}
 
-        self.debianpackage = os.path.abspath(sys.argv[1])
+        if not os.path.exists(self.debianpackage):
+            return {
+                "state": "broken",
+                "error": f"File does not exist: {self.debianpackage}"
+            }
+
         debianpackage_status = self.start(self.debianpackage)
 
         if debianpackage_status is None:
@@ -123,7 +161,7 @@ class MainWindow(object):
         return {"state": "invalid"}
 
     def initialize_ui(self, result):
-        state = result["state"]
+        state = result.get("state", "empty")
 
         self.button1.set_label(_("Install"))
         self.button2.set_label(_("Uninstall"))
@@ -136,7 +174,7 @@ class MainWindow(object):
 
         elif state == "broken":
             self._clear_package_labels()
-            self.debpackage_brokenmsg.set_text(result["error"])
+            self.debpackage_brokenmsg.set_text(result.get("error", _("Broken package")))
             self.mainstack.set_visible_child_name("brokendeb")
 
         elif state == "invalid":
@@ -150,8 +188,8 @@ class MainWindow(object):
             self.set_labels()
             self.package_main(
                 False,
-                result["firststatus"],
-                result["packagefailure"]
+                result.get("firststatus", 0),
+                result.get("packagefailure", "")
             )
 
         return False
@@ -217,24 +255,30 @@ class MainWindow(object):
             self.size.set_text(self.packagesize)
 
         pd = self.packagedepends or ""
-        items = [item.strip() for item in pd.split(",")]
+        items = [item.strip() for item in pd.split(",") if item.strip()]
         formatted = []
         for item in items:
             formatted.append(item.replace("|", " | "))
-        pd = "\n\n".join(formatted)
+        pd = "\n\n".join(formatted) if formatted else _("No dependencies")
         self.depends.set_markup("<small>{}</small>".format(GLib.markup_escape_text(pd, -1)))
 
         if self.packagemissingdeps:
-            self.missingdeps.set_markup("<small>{}</small>".format(
+            self.missingdeps.set_markup("<small><b><span color='red'>{}</span></b>\n{}</small>".format(
+                _("Unsatisfied Dependencies:"),
                 GLib.markup_escape_text(self.packagemissingdeps, -1)))
+        else:
+            self.missingdeps.set_markup("<small><span color='green'>{}</span></small>".format(
+                _("All dependencies are satisfied")))
 
         self.installed_version_title.set_markup(
             "<small><span weight='light'>{}</span></small>".format(_("Installed Version :")))
 
-        pkg = self.cache.get(self.packagename)
-        if pkg and pkg.is_installed:
-            systemversion = pkg.installed.version
-            self.installed_version.set_markup(f"<small><span weight='light'>{systemversion}</span></small>")
+        installed_ver = None
+        if self.package:
+            installed_ver = self.package.get_installed_version()
+
+        if installed_ver:
+            self.installed_version.set_markup(f"<small><span weight='light'>{installed_ver}</span></small>")
         else:
             self.installed_version.set_markup(
                 "<small><span weight='light'>{}</span></small>".format(_("Not installed")))
@@ -245,7 +289,7 @@ class MainWindow(object):
         self.window.set_focus(None)
 
     def package_main(self, actioned, status, packagefailure):
-        has_error = packagefailure and "A later version is already installed" not in packagefailure
+        has_error = bool(packagefailure and "A later version is already installed" not in packagefailure)
 
         if has_error:
             self.errorlabel.set_visible(True)
@@ -256,10 +300,11 @@ class MainWindow(object):
                 )
             )
 
-        # VERSION_NONE = 0
-        # VERSION_OUTDATED = 1
-        # VERSION_SAME = 2
-        # VERSION_NEWER = 3
+        # Status meanings:
+        # VERSION_NONE = 0      (Not installed)
+        # VERSION_OUTDATED = 1  (Downgrade)
+        # VERSION_SAME = 2      (Reinstall)
+        # VERSION_NEWER = 3     (Upgrade)
         config = {
             0: (_("Install"), self.installicon, False),
             1: (_("Downgrade"), self.downgradeicon, True),
@@ -282,54 +327,8 @@ class MainWindow(object):
         for uri in selection.get_uris():
             file = Gio.File.new_for_uri(uri)
             path = file.get_path()
-            self.from_file(path)
-
-    def initialize(self):
-        if self.file:
-            self.debianpackage = os.path.abspath(sys.argv[1])
-            debianpackage_status = self.start(self.debianpackage)
-            if debianpackage_status is not None:
-                if debianpackage_status:
-                    self.openbutton.set_visible(True)
-                    self.mainstack.set_visible_child_name("package")
-                    self.openbutton.set_visible(True)
-
-                    self.set_labels()
-
-                    self.package_main(False, self.firststatus, self.packagefailure)
-                else:
-                    self.button1.set_sensitive(False)
-                    self.button2.set_sensitive(False)
-                    self.button1.set_label(_("Install"))
-                    self.button2.set_label(_("Uninstall"))
-                    self.pacname.set_text("")
-                    self.pacversion.set_text("")
-                    self.installed_version_title.set_text("")
-                    self.installed_version.set_text("")
-                    self.open_broken_dialog()
-            else:
-                # deb package is broken
-                self.button1.set_sensitive(False)
-                self.button2.set_sensitive(False)
-                self.button1.set_label(_("Install"))
-                self.button2.set_label(_("Uninstall"))
-                self.pacname.set_text("")
-                self.pacversion.set_text("")
-                self.shortdesc.set_text("")
-                self.installed_version_title.set_text("")
-                self.installed_version.set_text("")
-                self.debpackage_brokenmsg.set_text(self.debianpackage_errormsg)
-                self.mainstack.set_visible_child_name("brokendeb")
-        else:
-            self.mainstack.set_visible_child_name("empty")
-            self.button1.set_sensitive(False)
-            self.button2.set_sensitive(False)
-            self.button1.set_label(_("Install"))
-            self.button2.set_label(_("Uninstall"))
-            self.pacname.set_text("")
-            self.pacversion.set_text("")
-            self.installed_version_title.set_text("")
-            self.installed_version.set_text("")
+            if path:
+                self.from_file(path)
 
     def define_components(self):
         self.button1 = self.builder.get_object("button1")
@@ -391,141 +390,82 @@ class MainWindow(object):
         self.about_dialog = self.builder.get_object("about_dialog")
 
     def start(self, debpackage):
-
         self.errorlabel.set_visible(False)
         self.errorlabel.set_text("")
 
         if self.update_cache():
-
             try:
-                self.package = aptdeb.DebPackage(debpackage)
+                self.package = DebPackage(debpackage, cache=self.cache)
             except Exception as e:
-                print("{}".format(e))
-                self.debianpackage_errormsg = "{}".format(e)
+                print(f"Error loading package: {e}")
+                self.debianpackage_errormsg = str(e)
                 return None
+
             self.packagename = self.package.pkgname
-
             self.firststatus = self.package.compare_to_version_in_cache()
-
             self.installable = self.package.check()
 
-            try:
-                self.packageversion = self.package._sections["Version"]
-            except Exception as e:
-                print("{}".format(e))
-                self.packageversion = "-"
+            self.packageversion = self.package.get("Version", "-")
+            self.packagedescription = self.package.get("Description", "")
+            self.packageshortdescription = self.packagedescription.split("\n")[0] if self.packagedescription else ""
 
-            try:
-                self.packagedescription = self.package._sections["Description"]
-            except Exception as e:
-                print("{}".format(e))
-                self.packagedescription = ""
-
-            try:
-                self.packageshortdescription = self.package["Description"].split("\n")[0]
-            except Exception as e:
-                print("{}".format(e))
-                self.packageshortdescription = ""
-
-            try:
-                self.packagemaintainer = self.package._sections["Maintainer"]
-            except Exception as e:
-                print("{}".format(e))
-                self.packagemaintainer = "-"
-
-            try:
-                self.packagemaintainername = self.packagemaintainer.split(" <")[0]
-            except Exception as e:
-                print("{}".format(e))
-                self.packagemaintainername = "-"
-
-            try:
-                self.packagemaintainermail = self.packagemaintainer.split(" <")[1].replace(">", "")
-            except Exception as e:
-                print("{}".format(e))
+            self.packagemaintainer = self.package.get("Maintainer", "-")
+            if " <" in self.packagemaintainer:
+                parts = self.packagemaintainer.split(" <")
+                self.packagemaintainername = parts[0]
+                self.packagemaintainermail = parts[1].replace(">", "")
+            else:
+                self.packagemaintainername = self.packagemaintainer
                 self.packagemaintainermail = "-"
 
-            try:
-                self.packagehomepage = self.package._sections["Homepage"]
-            except Exception as e:
-                print("{}".format(e))
-                self.packagehomepage = "-"
+            self.packagehomepage = self.package.get("Homepage", "-")
+            self.packagesection = self.package.get("Section", "-")
+            self.packagesize = self.package.get("Installed-Size", "-")
+            self.packagearchitecture = self.package.get("Architecture", "-")
 
-            try:
-                self.packagesection = self.package._sections["Section"]
-            except Exception as e:
-                print("{}".format(e))
-                self.packagesection = "-"
-
-            try:
-                self.packagesize = self.package._sections["Installed-Size"]
-            except Exception as e:
-                print("{}".format(e))
-                self.packagesize = "-"
-
-            try:
-                self.packagearchitecture = self.package._sections["Architecture"]
-            except Exception as e:
-                print("{}".format(e))
-                self.packagearchitecture = "-"
-
-            depends = self.package._sections.get("Depends", "")
-            recommends = self.package._sections.get("Recommends", "")
+            depends = self.package.get("Depends", "")
+            recommends = self.package.get("Recommends", "")
             if depends and recommends:
                 self.packagedepends = f"{depends}, {recommends}"
             else:
                 self.packagedepends = depends or recommends
 
-            missing = []
-            try:
-                missing = self.package.missing_deps or []
-            except Exception:
-                pass
-            if not missing:
-                try:
-                    rc = self.package.required_changes
-                    if isinstance(rc, dict):
-                        missing = rc.get("missing", [])
-                    elif isinstance(rc, (list, tuple)) and rc:
-                        missing = rc[0]
-                except Exception:
-                    pass
+            missing = self.package.missing_deps or []
             self.packagemissingdeps = "\n\n".join(map(str, missing))
-
-            try:
-                self.packagefailure = self.package._failure_string
-            except Exception as e:
-                print("{}".format(e))
-                self.packagefailure = ""
+            self.packagefailure = self.package._failure_string or ""
 
             return True
 
         return False
 
     def update_cache(self):
+        if not HAVE_APT:
+            self.cache = None
+            self.isbroken = False
+            return True
         try:
             self.cache = apt.Cache()
-        except:
+        except Exception:
+            self.cache = None
             self.isbroken = True
             return False
-        if self.cache.broken_count > 0:
+        if self.cache and self.cache.broken_count > 0:
             self.isbroken = True
             return False
         self.isbroken = False
         return True
 
     def compare_version(self):
-        # VERSION_NEWER = 3
-        # VERSION_NONE = 0
-        # VERSION_OUTDATED = 1
-        # VERSION_SAME = 2
-        return aptdeb.DebPackage(self.debianpackage).compare_to_version_in_cache()
+        if self.package:
+            return self.package.compare_to_version_in_cache()
+        return 0
 
     def failure_control(self):
-        return aptdeb.DebPackage(self.debianpackage)._failure_string
+        if self.package:
+            return self.package._failure_string
+        return ""
 
     def install_package(self, isupgrading):
-
         if self.installable:
             self.isinstalling = True
             self.progressbar.set_show_text(False)
@@ -538,19 +478,18 @@ class MainWindow(object):
                 self.notification = Notify.Notification.new(self.packagename + _(" upgraded"))
             else:
                 self.notification = Notify.Notification.new(self.packagename + _(" installed"))
-            self.command = ["/usr/bin/pkexec", os.path.dirname(os.path.abspath(__file__)) + "/Actions.py", "install",
-                            self.debianpackage]
+
+            self.command = ["/usr/bin/pkexec", self.get_actions_script(), "install", self.debianpackage]
             self.pid = self.start_process(self.command)
         else:
             print("package is not installable")
             try:
                 self.systemarchitecture = Popen(["/usr/bin/dpkg", "--print-architecture"],
                                                 stdout=PIPE, universal_newlines=True).communicate()[0].strip()
-            except:
+            except Exception:
                 self.systemarchitecture = "not detected"
-            if self.packagearchitecture != self.systemarchitecture:
-                print("Error : Package Architecture = " + self.packagearchitecture
-                      + ", System Architecture = " + self.systemarchitecture)
+            if self.packagearchitecture != self.systemarchitecture and self.packagearchitecture != "all":
+                print(f"Error: Package Architecture = {self.packagearchitecture}, System Architecture = {self.systemarchitecture}")
                 self.button1.set_sensitive(False)
                 self.button2.set_sensitive(False)
                 self.progstack.set_visible(True)
@@ -560,18 +499,15 @@ class MainWindow(object):
                     self.packagearchitecture))
 
     def remove_package(self):
-
-        if self.cache[self.packagename].is_installed:
-            self.progressbar.set_show_text(False)
-            self.progressbar.set_fraction(0)
-            self.button1.set_sensitive(False)
-            self.button2.set_sensitive(False)
-            self.openbutton.set_sensitive(False)
-            self.closestatus = True
-            self.notification = Notify.Notification.new(self.packagename + _(" uninstalled"))
-            self.command = ["/usr/bin/pkexec", os.path.dirname(os.path.abspath(__file__)) + "/Actions.py", "remove",
-                            self.packagename]
-            self.pid = self.start_process(self.command)
+        self.progressbar.set_show_text(False)
+        self.progressbar.set_fraction(0)
+        self.button1.set_sensitive(False)
+        self.button2.set_sensitive(False)
+        self.openbutton.set_sensitive(False)
+        self.closestatus = True
+        self.notification = Notify.Notification.new(self.packagename + _(" uninstalled"))
+        self.command = ["/usr/bin/pkexec", self.get_actions_script(), "remove", self.packagename]
+        self.pid = self.start_process(self.command)
 
     def reinstall_package(self):
         self.progressbar.set_show_text(False)
@@ -581,8 +517,7 @@ class MainWindow(object):
         self.openbutton.set_sensitive(False)
         self.closestatus = True
         self.notification = Notify.Notification.new(self.packagename + _(" reinstalled"))
-        self.command = ["/usr/bin/pkexec", os.path.dirname(os.path.abspath(__file__)) + "/Actions.py", "reinstall",
-                        self.debianpackage]
+        self.command = ["/usr/bin/pkexec", self.get_actions_script(), "reinstall", self.debianpackage]
         self.pid = self.start_process(self.command)
 
     def downgrade_package(self):
@@ -593,8 +528,7 @@ class MainWindow(object):
         self.openbutton.set_sensitive(False)
         self.closestatus = True
         self.notification = Notify.Notification.new(self.packagename + _(" downgraded"))
-        self.command = ["/usr/bin/pkexec", os.path.dirname(os.path.abspath(__file__)) + "/Actions.py", "downgrade",
-                        self.debianpackage]
+        self.command = ["/usr/bin/pkexec", self.get_actions_script(), "downgrade", self.debianpackage]
         self.pid = self.start_process(self.command)
 
     def on_button1_clicked(self, button):
@@ -638,29 +572,25 @@ class MainWindow(object):
     def on_openbutton_clicked(self, button):
         self.filechooser.run()
         self.filechooser.hide()
-        print("Open Button Clicked")
 
     def on_selectbutton_clicked(self, widget):
         self.filename = self.filechooser.get_filename()
         self.filechooser.hide()
-        self.from_file(self.filename)
-        print("Select Button Clicked")
+        if self.filename:
+            self.from_file(self.filename)
 
     def on_filechooser_file_activated(self, widget):
         self.filename = self.filechooser.get_filename()
         self.filechooser.hide()
-        self.from_file(self.filename)
-        print("Active Button Clicked")
+        if self.filename:
+            self.from_file(self.filename)
 
     def on_aboutbutton_clicked(self, button):
         self.about_dialog.run()
         self.about_dialog.hide()
 
     def on_detailsbutton_toggled(self, button):
-        if button.get_active():
-            self.detailsrevealer.set_reveal_child(True)
-        else:
-            self.detailsrevealer.set_reveal_child(False)
+        self.detailsrevealer.set_reveal_child(button.get_active())
 
     def open_broken_dialog(self):
         self.BrokenBox.set_visible(True)
@@ -675,7 +605,6 @@ class MainWindow(object):
             self.detailsbutton.set_label(_("Hide Details"))
 
     def from_file(self, path):
-
         self.openbutton.set_visible(True)
 
         # clear output textbuffer
@@ -683,41 +612,31 @@ class MainWindow(object):
         start, end = self.textview.get_buffer().get_bounds()
         self.textview.get_buffer().delete(start, end)
 
-        fileFormat = os.path.basename(path).split(".")[-1]
+        fileFormat = os.path.basename(path).split(".")[-1].lower()
         if fileFormat == "deb":
-            self.debianpackage = path
+            self.debianpackage = os.path.abspath(path)
             debianpackage_status = self.start(self.debianpackage)
             if debianpackage_status is not None:
                 if debianpackage_status:
-
                     self.set_labels()
-
                     self.package_main(False, self.firststatus, self.packagefailure)
                 else:
                     self.button1.set_sensitive(False)
                     self.button2.set_sensitive(False)
                     self.button1.set_label(_("Install"))
                     self.button2.set_label(_("Uninstall"))
-                    self.pacname.set_text("")
-                    self.pacversion.set_text("")
-                    self.installed_version_title.set_text("")
-                    self.installed_version.set_text("")
+                    self._clear_package_labels()
                     self.open_broken_dialog()
             else:
-                # deb package is broken
                 self.button1.set_sensitive(False)
                 self.button2.set_sensitive(False)
                 self.button1.set_label(_("Install"))
                 self.button2.set_label(_("Uninstall"))
-                self.pacname.set_text("")
-                self.pacversion.set_text("")
-                self.shortdesc.set_text("")
-                self.installed_version_title.set_text("")
-                self.installed_version.set_text("")
+                self._clear_package_labels()
                 self.debpackage_brokenmsg.set_text(self.debianpackage_errormsg)
                 self.mainstack.set_visible_child_name("brokendeb")
         else:
-            print("Only .deb files.")
+            print("Only .deb files are supported.")
 
     def on_close(self, *args):
         if self.closestatus:
@@ -739,8 +658,10 @@ class MainWindow(object):
         if condition == GLib.IO_HUP:
             return False
 
-        self.textview.get_buffer().insert(self.textview.get_buffer().get_end_iter(), source.readline())
-        self.textview.scroll_to_iter(self.textview.get_buffer().get_end_iter(), 0.0, False, 0.0, 0.0)
+        line = source.readline()
+        if line:
+            self.textview.get_buffer().insert(self.textview.get_buffer().get_end_iter(), line)
+            self.textview.scroll_to_iter(self.textview.get_buffer().get_end_iter(), 0.0, False, 0.0, 0.0)
 
         return True
 
@@ -749,7 +670,6 @@ class MainWindow(object):
             return False
         line = source.readline()
         if line is not None:
-            print(line)
             if "dlstatus" in line:
                 percent = line.split(":")[2].split(".")[0]
                 self.progressbar.set_show_text(True)
@@ -758,7 +678,6 @@ class MainWindow(object):
             elif "pmstatus" in line:
                 percent = line.split(":")[2].split(".")[0]
                 self.progressbar.set_show_text(True)
-                self.progressbar.set_text("{} {} %".format(self.packageaction, percent))
                 self.progressbar.set_text("{} {} %".format(self.packageaction, percent))
                 self.progressbar.set_fraction(int(percent) / 100)
             elif re.match(r"^[A-Za-zÇĞİÖŞÜçğıöşü]+:", line.strip()) and ".deb" in line:
@@ -773,7 +692,7 @@ class MainWindow(object):
                 self.error = True
                 self.dpkglockerror = True
 
-            self.textview.get_buffer().insert(self.textview.get_buffer().get_end_iter(), (line))
+            self.textview.get_buffer().insert(self.textview.get_buffer().get_end_iter(), line)
             self.textview.scroll_to_iter(self.textview.get_buffer().get_end_iter(), 0.0, False, 0.0, 0.0)
 
         return True
@@ -810,10 +729,9 @@ class MainWindow(object):
         self.packagefailure = self.failure_control()
         self.package_main(True, self.status, self.packagefailure)
 
-        pkg = self.cache.get(self.packagename)
-        if pkg and pkg.is_installed:
-            systemversion = pkg.installed.version
-            self.installed_version.set_markup(f"<small><span weight='light'>{systemversion}</span></small>")
+        installed_ver = self.package.get_installed_version() if self.package else None
+        if installed_ver:
+            self.installed_version.set_markup(f"<small><span weight='light'>{installed_ver}</span></small>")
         else:
             self.installed_version.set_markup(
                 "<small><span weight='light'>{}</span></small>".format(_("Not installed")))
@@ -833,6 +751,7 @@ class MainWindow(object):
                 self.progressbar.set_fraction(0)
             self.progstack.set_visible_child_name("doneinfo")
             self.notificationstate = False
+
         if retval == 256:
             errormessage = _("Only one software management tool is allowed to run at the same time.\n"
                              "Please close the other application\ne.g. 'Update Manager', 'aptitude' or 'Synaptic' first.")
@@ -842,6 +761,7 @@ class MainWindow(object):
                 self.progressbar.set_fraction(0)
             self.progstack.set_visible_child_name("doneinfo")
             self.notificationstate = False
+
         self.error = False
         self.dpkglockerror = False
         self.dpkgconferror = False
@@ -854,11 +774,10 @@ class MainWindow(object):
             return
 
         if not Notify.is_initted():
-            Notify.init("tr.org.pardus.package-installer")
+            Notify.init("org.parslinux.package-installer")
 
         icon_theme = Gtk.IconTheme.get_default()
-
-        icon_names = [self.packagename, "pardus-package-installer", "dialog-information", ]
+        icon_names = [self.packagename, "parslinux-package-installer", "dialog-information"]
 
         pixbuf = None
         for name in icon_names:
@@ -868,8 +787,8 @@ class MainWindow(object):
             except GLib.Error:
                 continue
 
-        if pixbuf:
+        if pixbuf and hasattr(self, "notification") and self.notification:
             self.notification.set_icon_from_pixbuf(pixbuf)
 
-        if not self.window.is_active():
+        if hasattr(self, "notification") and self.notification and not self.window.is_active():
             self.notification.show()

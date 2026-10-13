@@ -1,0 +1,20 @@
+[Desktop Entry]
+Name=Pars Linux Package Installer
+Name[pt]=Instalador de Pacotes Pars Linux
+Name[tr]=Pars Linux Paket Kurucu
+GenericName=Package Installer
+GenericName[pt]=Instalador de Pacotes
+GenericName[tr]=Paket Kurucu
+Comment=Install, view and manage Debian (.deb) software packages
+Comment[pt]=Instalar, ver e gerenciar pacotes Debian (.deb)
+Comment[tr]=Debian (.deb) yazılım paketlerini kur, incele ve yönet
+Exec=parslinux-package-installer %f
+Icon=parslinux-package-installer
+Terminal=false
+Type=Application
+Categories=System;Settings;PackageManager;GTK;
+MimeType=application/vnd.debian.binary-package;application/x-deb;application/x-debian-package;
+StartupNotify=true
+StartupWMClass=org.parslinux.package-installer
+Keywords=package;apt;dpkg;install;deb;kurucu;paket;gdebi;
+X-ParsLinux-Apps=true

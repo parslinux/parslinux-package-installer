@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+
+# Priority 1: System installation path
+# Priority 2: Local source directory for development
+sys_path = '/usr/share/parslinux/parslinux-package-installer/src/'
+local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src')
+
+if os.path.exists(sys_path):
+    sys.path.insert(0, sys_path)
+elif os.path.exists(local_path):
+    sys.path.insert(0, local_path)
+
+import Main

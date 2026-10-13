@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-12 00:13+0300\n"
+"POT-Creation-Date: 2026-10-13 22:57+0300\n"
 "PO-Revision-Date: 2026-02-12 00:13+0300\n"
 "Last-Translator: Fatih Altun <fatih.altun@pardus.org.tr>\n"
 "Language-Team: Turkish <dev@pardus.org.tr>\n"
@@ -63,15 +63,13 @@ msgstr "<small><span weight='light'>Yüklü Versiyon :</span></small>"
 msgid "<small><span weight='light'>Not installed</span></small>"
 msgstr "<small><span weight='light'>Yüklü değil</span></small>"
 
-#: ui/MainWindow.glade:349 src/MainWindow.py:128 src/MainWindow.py:264
-#: src/MainWindow.py:303 src/MainWindow.py:314 src/MainWindow.py:327
-#: src/MainWindow.py:699 src/MainWindow.py:710
+#: ui/MainWindow.glade:349 src/MainWindow.py:166 src/MainWindow.py:309
+#: src/MainWindow.py:626 src/MainWindow.py:633
 msgid "Install"
 msgstr "Yükle"
 
-#: ui/MainWindow.glade:366 src/MainWindow.py:129 src/MainWindow.py:304
-#: src/MainWindow.py:315 src/MainWindow.py:328 src/MainWindow.py:700
-#: src/MainWindow.py:711
+#: ui/MainWindow.glade:366 src/MainWindow.py:167 src/MainWindow.py:627
+#: src/MainWindow.py:634
 msgid "Uninstall"
 msgstr "Kaldır"
 
@@ -120,124 +118,140 @@ msgstr "Yüklenecek Paketler"
 msgid "Dependencies"
 msgstr "Bağımlılıklar"
 
-#: ui/MainWindow.glade:1172 src/MainWindow.py:70
-msgid "Pardus Package Installer"
-msgstr "Pardus Paket Kurucu"
+#: ui/MainWindow.glade:1172 src/MainWindow.py:82
+msgid "Pars Linux Package Installer"
+msgstr "Pars Linux Paket Kurucu"
 
 #: ui/MainWindow.glade:1231
 msgid "Manage and view .deb packages"
 msgstr "Deb paketlerini yönetin ve görüntüleyin"
 
 #. Name Surname <example@examplemail.com>
-#: ui/MainWindow.glade:1234
+#: ui/MainWindow.glade:1235
 msgid "translator-credits"
-msgstr "Fatih Altun <fatih.altun@pardus.org.tr>"
+msgstr "Pars Linux Geliştiricileri <dev@parslinux.org>"
 
-#: src/MainWindow.py:74
-msgid "About Pardus Package Installer"
-msgstr "Pardus Paket Kurucu Hakkında"
+#: src/MainWindow.py:86
+msgid "About Pars Linux Package Installer"
+msgstr "Pars Linux Paket Kurucu Hakkında"
 
-#: src/MainWindow.py:232
+#: src/MainWindow.py:177
+msgid "Broken package"
+msgstr "Bozuk paket"
+
+#: src/MainWindow.py:262
+msgid "No dependencies"
+msgstr "Bağımlılık yok"
+
+#: src/MainWindow.py:267
+msgid "Unsatisfied Dependencies:"
+msgstr "Karşılanamayan Bağımlılıklar:"
+
+#: src/MainWindow.py:271
+msgid "All dependencies are satisfied"
+msgstr "Tüm bağımlılıklar karşılandı"
+
+#: src/MainWindow.py:274
 msgid "Installed Version :"
 msgstr "Yüklü Versiyon :"
 
-#: src/MainWindow.py:240 src/MainWindow.py:819
+#: src/MainWindow.py:284 src/MainWindow.py:737
 msgid "Not installed"
 msgstr "Yüklü değil"
 
-#: src/MainWindow.py:254
+#: src/MainWindow.py:298
 msgid "Error !"
 msgstr "Hata !"
 
-#: src/MainWindow.py:265
+#: src/MainWindow.py:310
 msgid "Downgrade"
 msgstr "Versiyon Düşür"
 
-#: src/MainWindow.py:266
+#: src/MainWindow.py:311
 msgid "Reinstall"
 msgstr "Tekrar Yükle"
 
-#: src/MainWindow.py:267
+#: src/MainWindow.py:312
 msgid "Upgrade"
 msgstr "Versiyon Yükselt"
 
-#: src/MainWindow.py:538
+#: src/MainWindow.py:478
 msgid " upgraded"
 msgstr " versiyon yükseltildi"
 
-#: src/MainWindow.py:540
+#: src/MainWindow.py:480
 msgid " installed"
 msgstr " yüklendi"
 
-#: src/MainWindow.py:559
+#: src/MainWindow.py:498
 msgid "Package Architecture Error"
 msgstr "Paket Mimarisi Hatası"
 
-#: src/MainWindow.py:559
+#: src/MainWindow.py:498
 msgid "System"
 msgstr "Sistem"
 
-#: src/MainWindow.py:559
+#: src/MainWindow.py:498
 msgid "Package"
 msgstr "Paket"
 
-#: src/MainWindow.py:571
+#: src/MainWindow.py:508
 msgid " uninstalled"
 msgstr " kaldırıldı"
 
-#: src/MainWindow.py:583
+#: src/MainWindow.py:519
 msgid " reinstalled"
 msgstr " tekrar yüklendi"
 
-#: src/MainWindow.py:595
+#: src/MainWindow.py:530
 msgid " downgraded"
 msgstr " versiyon düşürüldü"
 
-#: src/MainWindow.py:609
+#: src/MainWindow.py:543
 msgid "Installing"
 msgstr "Yükleniyor"
 
-#: src/MainWindow.py:613
+#: src/MainWindow.py:547
 msgid "Downgrading"
 msgstr "Versiyon Düşürülüyor"
 
-#: src/MainWindow.py:618
+#: src/MainWindow.py:552
 msgid "Reinstalling"
 msgstr "Tekrar Yükleniyor"
 
-#: src/MainWindow.py:623
+#: src/MainWindow.py:557
 msgid "Upgrading"
 msgstr "Versiyon Yükseltiliyor"
 
-#: src/MainWindow.py:628
+#: src/MainWindow.py:562
 msgid "Uninstalling"
 msgstr "Kaldırılıyor"
 
-#: src/MainWindow.py:672
+#: src/MainWindow.py:602
 msgid "Show Details"
 msgstr "Detayları Göster"
 
-#: src/MainWindow.py:675
+#: src/MainWindow.py:605
 msgid "Hide Details"
 msgstr "Detayları Gizle"
 
-#: src/MainWindow.py:793
+#: src/MainWindow.py:712
 msgid "Not Completed !"
 msgstr "Tamamlanamadı !"
 
-#: src/MainWindow.py:796 src/MainWindow.py:825
+#: src/MainWindow.py:715 src/MainWindow.py:743
 msgid "<b><span color='red'>Connection Error !</span></b>"
 msgstr "<b><span color='red'>Bağlantı Hatası !</span></b>"
 
-#: src/MainWindow.py:798 src/MainWindow.py:827
+#: src/MainWindow.py:717 src/MainWindow.py:745
 msgid "<b><span color='red'>Dpkg Lock Error !</span></b>"
 msgstr "<b><span color='red'>Dpkg Kilitleme Hatası !</span></b>"
 
-#: src/MainWindow.py:800 src/MainWindow.py:829
+#: src/MainWindow.py:719 src/MainWindow.py:747
 msgid "<b><span color='red'>Dpkg Interrupt Error !</span></b>"
 msgstr "<b><span color='red'>Dpkg Kesinti Hatası !</span></b>"
 
-#: src/MainWindow.py:837
+#: src/MainWindow.py:756
 msgid ""
 "Only one software management tool is allowed to run at the same time.\n"
 "Please close the other application\n"
