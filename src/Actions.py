@@ -10,6 +10,8 @@ import os
 import signal
 import subprocess
 import sys
+import shutil
+import tempfile
 from typing import List, Union
 
 logging.basicConfig(
@@ -29,8 +31,37 @@ signal.signal(signal.SIGINT, handle_signal)
 signal.signal(signal.SIGTERM, handle_signal)
 
 
+def is_arch_environment() -> bool:
+    """Detect if running under an Arch Linux environment."""
+    return os.path.exists("/etc/arch-release") or (bool(shutil.which("pacman")) and not bool(shutil.which("dpkg")))
+
+
+def is_arch_package(filename: str) -> bool:
+    """Check if target filename is an Arch package archive."""
+    return str(filename).lower().endswith((".pkg.tar.zst", ".pkg.tar.xz", ".pkg.tar.gz", ".pkg.tar"))
+
+
+def build_pacman_install_command(targets: List[str]) -> List[str]:
+    """Construct pacman command line for installing local package archives."""
+    return ["pacman", "-U", "--noconfirm", "--needed", *targets]
+
+
+def build_pacman_remove_command(target: Union[str, List[str]]) -> List[str]:
+    """Construct pacman command line for removing installed packages."""
+    if isinstance(target, str):
+        target = [target]
+    return ["pacman", "-Rns", "--noconfirm", *target]
+
+
 def control_lock() -> bool:
-    """Verify that neither dpkg nor apt locks are currently held."""
+    """Verify that neither dpkg/apt nor pacman locks are currently held."""
+    if is_arch_environment():
+        pacman_lock = "/var/lib/pacman/db.lck"
+        if os.path.exists(pacman_lock):
+            logger.error("Pacman database is currently locked (%s exists).", pacman_lock)
+            return False
+        return True
+
     try:
         import apt_pkg
         apt_pkg.init_system()
@@ -59,12 +90,47 @@ def control_lock() -> bool:
 
 
 def install(targets: Union[str, List[str]]) -> int:
-    """Install one or multiple local .deb package archives."""
+    """Install one or multiple local package archives (.deb or .pkg.tar.*)."""
     if isinstance(targets, str):
         targets = [targets]
-    deb_paths = [os.path.abspath(p) for p in targets]
+    pkg_paths = [os.path.abspath(p) for p in targets]
+
+    # Arch Linux native package installation
+    any_arch_pkg = any(is_arch_package(p) for p in pkg_paths)
+    if is_arch_environment() or any_arch_pkg:
+        pacman_bin = shutil.which("pacman") or "/usr/bin/pacman"
+        arch_targets = []
+        for p in pkg_paths:
+            if is_arch_package(p):
+                arch_targets.append(p)
+            elif p.endswith(".deb"):
+                # Convert deb via debtap on Arch Linux if available
+                debtap_bin = shutil.which("debtap")
+                if debtap_bin:
+                    logger.info("Converting %s via debtap...", p)
+                    tmp_dir = tempfile.mkdtemp(prefix="debtap-")
+                    res = subprocess.run([debtap_bin, "-q", "-Q", p], cwd=tmp_dir, check=False)
+                    converted = [os.path.join(tmp_dir, f) for f in os.listdir(tmp_dir) if is_arch_package(f)]
+                    if converted:
+                        arch_targets.append(converted[0])
+                    else:
+                        logger.error("debtap conversion failed for %s", p)
+                else:
+                    logger.warning("debtap not found. Cannot convert .deb on Arch Linux without debtap.")
+
+        if arch_targets:
+            cmd = build_pacman_install_command(arch_targets)
+            res = subprocess.run(cmd, check=False)
+            return res.returncode
+        elif any(p.endswith(".deb") for p in pkg_paths) and not is_arch_environment():
+            pass  # Fall through to standard APT
+        else:
+            logger.error("No valid installable packages found.")
+            return 1
+
+    # Standard Debian/Pars Linux APT installation
     cmd = [
-        "apt", "install", *deb_paths, "-yq",
+        "apt", "install", *pkg_paths, "-yq",
         "-o", "APT::Status-Fd=2",
         "-o", "Dpkg::Options::=--force-confnew"
     ]
@@ -73,11 +139,17 @@ def install(targets: Union[str, List[str]]) -> int:
     return res.returncode
 
 
-def reinstall(debianpackage: str) -> int:
-    """Reinstall the specified local package."""
-    deb_path = os.path.abspath(debianpackage)
+def reinstall(target: str) -> int:
+    """Reinstall the specified local package archive."""
+    pkg_path = os.path.abspath(target)
+    if is_arch_environment() or is_arch_package(pkg_path):
+        pacman_bin = shutil.which("pacman") or "/usr/bin/pacman"
+        cmd = [pacman_bin, "-U", "--noconfirm", pkg_path]
+        res = subprocess.run(cmd, check=False)
+        return res.returncode
+
     cmd = [
-        "apt", "install", "--reinstall", "--allow-downgrades", deb_path, "-yq",
+        "apt", "install", "--reinstall", "--allow-downgrades", pkg_path, "-yq",
         "-o", "APT::Status-Fd=2",
         "-o", "Dpkg::Options::=--force-confnew"
     ]
@@ -90,6 +162,12 @@ def remove(packagenames: Union[str, List[str]]) -> int:
     """Purge remove one or more installed packages from the system."""
     if isinstance(packagenames, str):
         packagenames = [packagenames]
+
+    if is_arch_environment():
+        cmd = build_pacman_remove_command(packagenames)
+        res = subprocess.run(cmd, check=False)
+        return res.returncode
+
     cmd = [
         "apt", "remove", "--purge", *packagenames, "-yq",
         "-o", "APT::Status-Fd=2",
@@ -100,11 +178,17 @@ def remove(packagenames: Union[str, List[str]]) -> int:
     return res.returncode
 
 
-def downgrade(debianpackage: str) -> int:
-    """Downgrade the package to the version in the specified archive."""
-    deb_path = os.path.abspath(debianpackage)
+def downgrade(target: str) -> int:
+    """Downgrade package to the specified local archive version."""
+    pkg_path = os.path.abspath(target)
+    if is_arch_environment() or is_arch_package(pkg_path):
+        pacman_bin = shutil.which("pacman") or "/usr/bin/pacman"
+        cmd = [pacman_bin, "-U", "--noconfirm", pkg_path]
+        res = subprocess.run(cmd, check=False)
+        return res.returncode
+
     cmd = [
-        "apt", "install", "--allow-downgrades", deb_path, "-yq",
+        "apt", "install", "--allow-downgrades", pkg_path, "-yq",
         "-o", "APT::Status-Fd=2",
         "-o", "Dpkg::Options::=--force-confnew"
     ]

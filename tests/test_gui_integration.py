@@ -27,6 +27,30 @@ class TestGuiIntegrations(unittest.TestCase):
         GLib.timeout_add(250, verify)
         loop.run()
 
+    def test_gtk3_arch_package(self):
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+        import gi
+        gi.require_version('Gtk', '3.0')
+        from gi.repository import Gtk, Gio, GLib
+        from MainWindow import MainWindow
+
+        class DummyApp(Gtk.Application):
+            def __init__(self):
+                super().__init__(application_id='org.parslinux.test.gtk3.arch')
+
+        app = DummyApp()
+        fixture = os.path.join(os.path.dirname(__file__), 'fixtures', 'parslinux-arch-hello-1.0.0-1-any.pkg.tar.zst')
+        win = MainWindow(app, Gio.File.new_for_path(fixture))
+
+        loop = GLib.MainLoop()
+        def verify():
+            self.assertEqual(win.pacname.get_text(), 'parslinux-arch-hello')
+            self.assertEqual(win.packageversion, '1.0.0-1')
+            loop.quit()
+
+        GLib.timeout_add(250, verify)
+        loop.run()
+
     def test_gtk4_adw_window(self):
         import subprocess
         # PyGObject cannot load both GTK3 and GTK4 in the same runtime process.
@@ -75,6 +99,28 @@ class TestGuiIntegrations(unittest.TestCase):
 
         app.connect('activate', on_act)
         app.run([])
+
+    def test_gtk4_adw_arch_package(self):
+        import subprocess
+        sub_code = (
+            "import sys, os, gi\n"
+            "sys.path.insert(0, os.path.abspath('src'))\n"
+            "gi.require_version('Gtk', '4.0')\n"
+            "gi.require_version('Adw', '1')\n"
+            "from gi.repository import Adw\n"
+            "from MainWindowAdw import MainWindowAdw\n"
+            "app = Adw.Application(application_id='org.parslinux.test.adw_arch')\n"
+            "fixture = os.path.abspath('tests/fixtures/parslinux-arch-hello-1.0.0-1-any.pkg.tar.zst')\n"
+            "def on_act(app):\n"
+            "    win = MainWindowAdw(app, fixture)\n"
+            "    assert win.lbl_pkgname.get_label() == 'parslinux-arch-hello'\n"
+            "    assert win.package.get('Version') == '1.0.0-1'\n"
+            "    app.quit()\n"
+            "app.connect('activate', on_act)\n"
+            "app.run([])\n"
+        )
+        res = subprocess.run([sys.executable, "-c", sub_code], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"GTK4 Arch package test failed: {res.stderr}")
 
 if __name__ == '__main__':
     unittest.main()

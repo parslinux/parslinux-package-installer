@@ -11,6 +11,7 @@ import sys
 from typing import Any, List, Optional
 
 from cli import cli_check, cli_info, get_version, is_remote_url, download_remote_deb
+from PackageLoader import is_supported_package
 
 logger = logging.getLogger("parslinux-package-installer-adw")
 
@@ -45,7 +46,7 @@ def _get_adw_application_class() -> Any:
                         target_files.append(downloaded)
                     except Exception as e:
                         logger.error("Failed to download remote deb %s: %s", arg, e)
-                elif os.path.exists(arg) and arg.lower().endswith(".deb"):
+                elif os.path.exists(arg) and is_supported_package(arg):
                     target_files.append(os.path.abspath(arg))
 
             if self.window is None:
@@ -63,7 +64,7 @@ def _get_adw_application_class() -> Any:
             target_paths: List[str] = []
             for f in files:
                 p = f.get_path()
-                if p and os.path.exists(p) and p.lower().endswith(".deb"):
+                if p and os.path.exists(p) and is_supported_package(p):
                     target_paths.append(p)
 
             if self.window is None:
@@ -89,11 +90,11 @@ def __getattr__(name: str) -> Any:
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="parslinux-package-installer-adw",
-        description="Pars Linux Deb Package Installer (GTK 4 / Libadwaita Interface)"
+        description="Pars Linux Package Installer (GTK 4 / Libadwaita Interface)"
     )
-    parser.add_argument("files", nargs="*", help="Debian package files (.deb) to inspect or install")
-    parser.add_argument("-i", "--info", metavar="DEB_FILE", help="Display package metadata in terminal without GUI")
-    parser.add_argument("-c", "--check", metavar="DEB_FILE", help="Verify package dependencies in terminal (exit 0: ok, 1: missing)")
+    parser.add_argument("files", nargs="*", help="Package files (.deb, .pkg.tar.*) to inspect or install")
+    parser.add_argument("-i", "--info", metavar="PKG_FILE", help="Display package metadata in terminal without GUI")
+    parser.add_argument("-c", "--check", metavar="PKG_FILE", help="Verify package dependencies in terminal (exit 0: ok, 1: missing)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose debug logging")
     parser.add_argument("--version", action="store_true", help="Show program version and exit")
 

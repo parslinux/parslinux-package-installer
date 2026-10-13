@@ -15,6 +15,7 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Gdk, Adw, Gio, GLib, GObject
 
 from DebPackage import DebPackage, HAVE_APT
+from PackageLoader import open_package, is_supported_package
 
 
 class MainWindowAdw(Adw.ApplicationWindow):
@@ -283,27 +284,44 @@ class MainWindowAdw(Adw.ApplicationWindow):
     def on_file_dropped(self, target, value, x, y):
         if isinstance(value, Gio.File):
             path = value.get_path()
-            if path and path.lower().endswith(".deb"):
+            if path and is_supported_package(path):
                 self.from_file(path)
                 return True
         return False
 
     def on_open_clicked(self, button):
-        dialog = Gtk.FileDialog(title="Debian Paket Dosyası Seçin")
+        dialog = Gtk.FileDialog(title="Paket Dosyası Seçin")
         filters = Gio.ListStore.new(Gtk.FileFilter)
+
+        f_all = Gtk.FileFilter()
+        f_all.set_name("Tüm Paketler (*.deb, *.pkg.tar.*)")
+        f_all.add_pattern("*.deb")
+        f_all.add_pattern("*.pkg.tar.zst")
+        f_all.add_pattern("*.pkg.tar.xz")
+        f_all.add_pattern("*.pkg.tar.gz")
+        f_all.add_pattern("*.pkg.tar")
+        filters.append(f_all)
+
         f_deb = Gtk.FileFilter()
         f_deb.set_name("Debian Paketleri (*.deb)")
         f_deb.add_pattern("*.deb")
         f_deb.add_mime_type("application/vnd.debian.binary-package")
         filters.append(f_deb)
-        dialog.set_filters(filters)
 
+        f_arch = Gtk.FileFilter()
+        f_arch.set_name("Arch Linux Paketleri (*.pkg.tar.zst)")
+        f_arch.add_pattern("*.pkg.tar.zst")
+        f_arch.add_pattern("*.pkg.tar.xz")
+        f_arch.add_pattern("*.pkg.tar")
+        filters.append(f_arch)
+
+        dialog.set_filters(filters)
         dialog.open_multiple(self, None, self.on_files_selected)
 
     def on_files_selected(self, dialog, result):
         try:
             files = dialog.open_multiple_finish(result)
-            paths = [f.get_path() for f in files if f.get_path() and f.get_path().lower().endswith(".deb")]
+            paths = [f.get_path() for f in files if f.get_path() and is_supported_package(f.get_path())]
             if len(paths) == 1:
                 self.from_file(paths[0])
             elif len(paths) > 1:
@@ -318,7 +336,7 @@ class MainWindowAdw(Adw.ApplicationWindow):
             return
 
         try:
-            self.package = DebPackage(path)
+            self.package = open_package(path)
             self.debianpackage = path
         except Exception as e:
             self.page_broken.set_description(str(e))
@@ -430,7 +448,7 @@ class MainWindowAdw(Adw.ApplicationWindow):
             if not os.path.exists(p):
                 continue
             try:
-                pkg = DebPackage(p)
+                pkg = open_package(p)
                 raw_size = int(pkg.get("Installed-Size", 0)) * 1024
                 total_bytes += raw_size
                 item = {

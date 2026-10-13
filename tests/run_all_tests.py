@@ -16,8 +16,11 @@ if __name__ == '__main__':
     all_ok &= run_isolated('Included Files Tests', [os.path.join(tests_dir, 'test_included_files.py')])
     all_ok &= run_isolated('Batch Queue Tests', [os.path.join(tests_dir, 'test_batch_queue.py')])
     all_ok &= run_isolated('CLI & UI Modernization Tests', [os.path.join(tests_dir, 'test_cli_modernization.py')])
+    all_ok &= run_isolated('Arch Linux Support Tests', [os.path.join(tests_dir, 'test_arch_package.py')])
     all_ok &= run_isolated('GTK3 GUI Integration Test', ['-c', 'import unittest, sys; sys.path.insert(0, sys.argv[1]); from test_gui_integration import TestGuiIntegrations; suite = unittest.TestSuite([TestGuiIntegrations("test_gtk3_mainwindow")]); res = unittest.TextTestRunner(verbosity=2).run(suite); sys.exit(not res.wasSuccessful())', tests_dir])
+    all_ok &= run_isolated('GTK3 Arch Package Integration Test', ['-c', 'import unittest, sys; sys.path.insert(0, sys.argv[1]); from test_gui_integration import TestGuiIntegrations; suite = unittest.TestSuite([TestGuiIntegrations("test_gtk3_arch_package")]); res = unittest.TextTestRunner(verbosity=2).run(suite); sys.exit(not res.wasSuccessful())', tests_dir])
     all_ok &= run_isolated('GTK4 Libadwaita Integration Test', ['-c', 'import unittest, sys; sys.path.insert(0, sys.argv[1]); from test_gui_integration import TestGuiIntegrations; res = unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite([TestGuiIntegrations("test_gtk4_adw_window")])); sys.exit(not res.wasSuccessful())', tests_dir])
+    all_ok &= run_isolated('GTK4 Libadwaita Arch Package Integration Test', ['-c', 'import unittest, sys; sys.path.insert(0, sys.argv[1]); from test_gui_integration import TestGuiIntegrations; res = unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite([TestGuiIntegrations("test_gtk4_adw_arch_package")])); sys.exit(not res.wasSuccessful())', tests_dir])
 
     if all_ok:
         print('ALL TEST SUITES PASSED PERFECTLY!')

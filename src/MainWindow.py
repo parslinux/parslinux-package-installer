@@ -23,6 +23,7 @@ gi.require_version("Notify", "0.7")
 from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Notify
 
 from DebPackage import DebPackage, HAVE_APT
+from PackageLoader import open_package, is_supported_package
 
 if HAVE_APT:
     import apt
@@ -73,7 +74,7 @@ class MainWindow:
         self.isbroken: bool = False
         self.debianpackage_errormsg: str = ""
         self.pid: Optional[int] = None
-        self.package: Optional[DebPackage] = None
+        self.package: Optional[Any] = None
         self.cache: Optional[apt.Cache] = None if HAVE_APT else None
 
         # Gtk Builder UI file resolution
@@ -302,7 +303,7 @@ class MainWindow:
                     )
                 )
                 size_str = "-" if d["is_dir"] else self._format_size(d["size"])
-                self.files_store.append([icon, d["name"], size_str, d["mode"]])
+                self.files_store.append([icon, d["name"], size_str, d.get("mode", d.get("mode_str", "0644"))])
             if hasattr(self, "file_count_label") and self.file_count_label:
                 self.file_count_label.set_text(f"{len(details)} dosya")
 
@@ -338,7 +339,7 @@ class MainWindow:
         for uri in selection.get_uris():
             file = Gio.File.new_for_uri(uri)
             p = file.get_path()
-            if p and p.lower().endswith(".deb") and os.path.exists(p):
+            if p and is_supported_package(p) and os.path.exists(p):
                 paths.append(p)
         if len(paths) == 1:
             self.from_file(paths[0])
@@ -431,7 +432,7 @@ class MainWindow:
 
         if self.update_cache():
             try:
-                self.package = DebPackage(debpackage, cache=self.cache)
+                self.package = open_package(debpackage, cache=self.cache)
             except Exception as e:
                 logger.error("Error loading package: %s", e)
                 self.debianpackage_errormsg = str(e)
@@ -661,8 +662,7 @@ class MainWindow:
         start, end = self.textview.get_buffer().get_bounds()
         self.textview.get_buffer().delete(start, end)
 
-        ext = os.path.basename(path).split(".")[-1].lower()
-        if ext == "deb":
+        if is_supported_package(path):
             self.debianpackage = os.path.abspath(path)
             debianpackage_status = self.start(self.debianpackage)
             if debianpackage_status is not None:
@@ -685,7 +685,7 @@ class MainWindow:
                 self.debpackage_brokenmsg.set_text(self.debianpackage_errormsg)
                 self.mainstack.set_visible_child_name("brokendeb")
         else:
-            logger.warning("Only .deb files are supported: %s", path)
+            logger.warning("Unsupported package file format: %s", path)
 
     def on_close(self, *args) -> bool:
         if self.closestatus:
@@ -1006,10 +1006,10 @@ class MainWindow:
 
         for fp in file_paths:
             fp = os.path.abspath(fp)
-            if fp in existing_paths or not os.path.exists(fp) or not fp.lower().endswith(".deb"):
+            if fp in existing_paths or not os.path.exists(fp) or not is_supported_package(fp):
                 continue
             try:
-                pkg = DebPackage(fp, cache=self.cache)
+                pkg = open_package(fp, cache=self.cache)
                 pkgname = pkg.pkgname
                 version = pkg.get("Version", "-")
                 raw_size = pkg.get("Installed-Size", "0")

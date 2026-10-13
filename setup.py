@@ -41,7 +41,7 @@ data_files = [
     ("/usr/share/parslinux/parslinux-package-installer/data", ["data/style.css"]),
     ("/usr/share/parslinux/parslinux-package-installer/ui", ["ui/MainWindow.glade", "ui/style.css"]),
     ("/usr/share/parslinux/parslinux-package-installer/src",
-     ["src/Actions.py", "src/Main.py", "src/MainWindow.py", "src/DebPackage.py", "src/cli.py", "src/MainAdw.py", "src/MainWindowAdw.py", "src/__version__"]),
+     ["src/Actions.py", "src/Main.py", "src/MainWindow.py", "src/DebPackage.py", "src/ArchPackage.py", "src/PackageLoader.py", "src/cli.py", "src/MainAdw.py", "src/MainWindowAdw.py", "src/__version__"]),
     ("/usr/bin", ["parslinux-package-installer", "parslinux-package-installer-adw", "pardus-package-installer"]),
     ("/usr/share/polkit-1/actions", ["org.parslinux.pkexec.parslinux-package-installer.policy"]),
     ("/usr/share/parslinux/parslinux-package-installer/images", ["images/parslinux-package-installer.svg"]),

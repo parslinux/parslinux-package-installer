@@ -13,6 +13,7 @@ import urllib.request
 from typing import Optional
 
 from DebPackage import DebPackage
+from PackageLoader import open_package, is_supported_package
 
 
 def is_remote_url(target: str) -> bool:
@@ -24,10 +25,10 @@ def is_remote_url(target: str) -> bool:
 
 
 def download_remote_deb(url: str, progress_cb=None) -> str:
-    """Download remote .deb to a secure temporary file and return the path."""
+    """Download remote package (.deb or .pkg.tar.*) to a secure temporary file and return the path."""
     parsed = urllib.parse.urlparse(url)
     filename = os.path.basename(parsed.path) or "downloaded_package.deb"
-    if not filename.lower().endswith(".deb"):
+    if not is_supported_package(filename):
         filename += ".deb"
 
     fd, temp_path = tempfile.mkstemp(prefix="parslinux-pkg-", suffix="-" + filename)
@@ -83,7 +84,7 @@ def cli_info(deb_path: str) -> int:
         print(f"Hata: Dosya bulunamadı: {deb_path}", file=sys.stderr)
         return 1
     try:
-        pkg = DebPackage(deb_path)
+        pkg = open_package(deb_path)
     except Exception as e:
         print(f"Hata: Paket okunamadı: {e}", file=sys.stderr)
         if temp_file and os.path.exists(temp_file):
@@ -131,7 +132,7 @@ def cli_check(deb_path: str) -> int:
         print(f"Hata: Dosya bulunamadı: {deb_path}", file=sys.stderr)
         return 1
     try:
-        pkg = DebPackage(deb_path)
+        pkg = open_package(deb_path)
     except Exception as e:
         print(f"Hata: Paket okunamadı: {e}", file=sys.stderr)
         if temp_file and os.path.exists(temp_file):

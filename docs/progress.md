@@ -98,7 +98,30 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 - [x] **DebPackage.py Baştan Sona Modernizasyon**: Ham `print` ifadeleri `logging` modülüne geçirildi, tam Python 3 tip ipuçları (`typing`), temiz docstring'ler ve Python 3.14 sıfır-uyarı regex kalıpları sağlandı.
 - [x] **Paketleme & Dağıtım Bütünlüğü**: `setup.py` ve `debian/control` modern veri dosyalarını (`data/style.css`, `data/org.parslinux.package-installer.metainfo.xml`, `src/cli.py`) ve `Recommends: gir1.2-adw-1, gir1.2-gtk-4.0` bağımlılıklarını kapsayacak şekilde güncellendi.
 
----
+## 🎯 Kilometre Taşı 12: Arch Linux & Çoklu Dağıtım Desteği (Multi-Distro Engine) ✅
+- [x] **Arch Linux Doğal Paket Motoru (`src/ArchPackage.py`)**:
+  - `.pkg.tar.zst`, `.pkg.tar.xz`, `.pkg.tar.gz`, `.pkg.tar` arşivlerini doğrudan okuma ve zstd akışlarını açma.
+  - `.PKGINFO` anahtar/değer metaverilerini ayrıştırma (paket adı, sürüm, açıklama, geliştirici, url, boyut, mimari, bağımlılıklar, isteğe bağlı bağımlılıklar, çakışmalar, sağlananlar).
+  - İçerilen dosyalar ağacı (`get_file_details`) ve mimari uyumluluk denetimi.
+  - `pacman -Q` ve `vercmp` ile kurulu sürüm karşılaştırması.
+- [x] **Polimorfik Evrensel Paket Yükleyici (`src/PackageLoader.py`)**:
+  - `open_package()`: Dosya uzantısına göre otomatik olarak `DebPackage` veya `ArchPackage` nesnesi üretir.
+  - `is_supported_package()`: `.deb` ve tüm Arch Linux paket formatlarını tanır.
+  - `is_arch_system()`: Sistemin Arch Linux tabanlı olup olmadığını tespit eder.
+- [x] **Çift Katmanlı Eylem Motoru (`src/Actions.py`)**:
+  - Arch Linux ortamında `pacman -U --noconfirm --needed` ile kurulum ve `pacman -Rns --noconfirm` ile kaldırma.
+  - Pacman veritabanı kilit denetimi (`/var/lib/pacman/db.lck`).
+  - Arch Linux üzerinde `.deb` açıldığında `debtap` otomatik dönüştürme ve kurma desteği.
+  - Debian ve Pars Linux üzerinde eksiksiz APT/dpkg uyumluluğunun korunması.
+- [x] **Ön Yüz ve Kullanıcı Deneyimi Entegrasyonu**:
+  - `MainWindow.py` (GTK3) ve `MainWindowAdw.py` (GTK4 / Libadwaita) arayüzlerinde hem `.deb` hem `.pkg.tar.*` paketlerini tek tıkla açma, inceleme ve toplu kuyruğa ekleme.
+  - Sürükle ve bırak (Drag & Drop) ve dosya seçici pencerelerine Arch paket filtreleri eklendi.
+  - Masaüstü kısayolu (`.desktop`) MIME tipleri `application/x-zstd-compressed-tar`, `application/x-arch-package` ile genişletildi.
+- [x] **Arch Linux / AUR Paketleme Standartları**:
+  - Kök dizinde tam standartlara uygun `PKGBUILD` ve `.SRCINFO` oluşturuldu.
+- [x] **Kapsamlı Test Kapsamı**:
+  - `tests/fixtures/parslinux-arch-hello-1.0.0-1-any.pkg.tar.zst` test paketi oluşturuldu.
+  - `tests/test_arch_package.py` birim testleri ve GTK3 / GTK4 arayüz entegrasyon testleri eklendi (%100 geçiyor).
 
 ## 🔍 Teknik Borç Durumu ve Analizi
 

@@ -40,7 +40,18 @@
   <object class="GtkFileFilter" id="filefilter1">
     <mime-types>
       <mime-type>application/vnd.debian.binary-package</mime-type>
+      <mime-type>application/x-deb</mime-type>
+      <mime-type>application/x-debian-package</mime-type>
+      <mime-type>application/x-zstd-compressed-tar</mime-type>
+      <mime-type>application/x-tar</mime-type>
     </mime-types>
+    <patterns>
+      <pattern>*.deb</pattern>
+      <pattern>*.pkg.tar.zst</pattern>
+      <pattern>*.pkg.tar.xz</pattern>
+      <pattern>*.pkg.tar.gz</pattern>
+      <pattern>*.pkg.tar</pattern>
+    </patterns>
   </object>
   <object class="GtkFileChooserDialog" id="filechooser">
     <property name="can-focus">False</property>
