@@ -7,8 +7,52 @@ Provides package metadata display and dependency checking without any GUI depend
 
 import os
 import sys
+import tempfile
+import urllib.parse
+import urllib.request
+from typing import Optional
 
 from DebPackage import DebPackage
+
+
+def is_remote_url(target: str) -> bool:
+    """Check if target string is an HTTP or HTTPS URL."""
+    if not isinstance(target, str):
+        return False
+    parsed = urllib.parse.urlparse(target)
+    return parsed.scheme in ("http", "https")
+
+
+def download_remote_deb(url: str, progress_cb=None) -> str:
+    """Download remote .deb to a secure temporary file and return the path."""
+    parsed = urllib.parse.urlparse(url)
+    filename = os.path.basename(parsed.path) or "downloaded_package.deb"
+    if not filename.lower().endswith(".deb"):
+        filename += ".deb"
+
+    fd, temp_path = tempfile.mkstemp(prefix="parslinux-pkg-", suffix="-" + filename)
+    os.close(fd)
+
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Mozilla/5.0 ParsLinuxPackageInstaller/1.0"}
+    )
+    with urllib.request.urlopen(req, timeout=30) as response, open(temp_path, "wb") as out_file:
+        total_size = response.headers.get("Content-Length")
+        total_size = int(total_size) if total_size and total_size.isdigit() else None
+        bytes_downloaded = 0
+        chunk_size = 64 * 1024
+
+        while True:
+            chunk = response.read(chunk_size)
+            if not chunk:
+                break
+            out_file.write(chunk)
+            bytes_downloaded += len(chunk)
+            if progress_cb and total_size:
+                progress_cb(bytes_downloaded, total_size)
+
+    return temp_path
 
 
 def get_version() -> str:
@@ -25,6 +69,16 @@ def get_version() -> str:
 
 def cli_info(deb_path: str) -> int:
     """Print formatted package metadata to terminal without launching GUI."""
+    temp_file = None
+    if is_remote_url(deb_path):
+        print(f"Uzak paket indiriliyor: {deb_path} ...")
+        try:
+            deb_path = download_remote_deb(deb_path)
+            temp_file = deb_path
+        except Exception as e:
+            print(f"Hata: Uzak paket indirilemedi: {e}", file=sys.stderr)
+            return 1
+
     if not os.path.exists(deb_path):
         print(f"Hata: Dosya bulunamadı: {deb_path}", file=sys.stderr)
         return 1
@@ -32,6 +86,8 @@ def cli_info(deb_path: str) -> int:
         pkg = DebPackage(deb_path)
     except Exception as e:
         print(f"Hata: Paket okunamadı: {e}", file=sys.stderr)
+        if temp_file and os.path.exists(temp_file):
+            os.remove(temp_file)
         return 1
 
     installed_ver = pkg.get_installed_version()
@@ -61,6 +117,16 @@ def cli_info(deb_path: str) -> int:
 
 def cli_check(deb_path: str) -> int:
     """Check package dependencies and report status with exit code."""
+    temp_file = None
+    if is_remote_url(deb_path):
+        print(f"Uzak paket indiriliyor: {deb_path} ...")
+        try:
+            deb_path = download_remote_deb(deb_path)
+            temp_file = deb_path
+        except Exception as e:
+            print(f"Hata: Uzak paket indirilemedi: {e}", file=sys.stderr)
+            return 1
+
     if not os.path.exists(deb_path):
         print(f"Hata: Dosya bulunamadı: {deb_path}", file=sys.stderr)
         return 1
@@ -68,6 +134,8 @@ def cli_check(deb_path: str) -> int:
         pkg = DebPackage(deb_path)
     except Exception as e:
         print(f"Hata: Paket okunamadı: {e}", file=sys.stderr)
+        if temp_file and os.path.exists(temp_file):
+            os.remove(temp_file)
         return 1
 
     ok = pkg.check()

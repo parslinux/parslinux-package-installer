@@ -13,3 +13,4 @@ if os.path.exists(parslinux_bin):
 else:
     sys.path.insert(0, '/usr/share/parslinux/parslinux-package-installer/src/')
     import Main
+    sys.exit(Main.main())

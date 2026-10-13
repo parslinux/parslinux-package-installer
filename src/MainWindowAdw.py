@@ -503,34 +503,45 @@ class MainWindowAdw(Adw.ApplicationWindow):
         actions_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Actions.py")
         total = len(items)
 
-        for i, it in enumerate(items):
-            def update_ui(cur=i, item=it):
-                item['icon_widget'].set_from_icon_name("process-working-symbolic")
-                self.batch_progress.set_fraction(cur / float(total))
-                self.batch_progress.set_text(f"({cur + 1}/{total}) {item['pkg'].pkgname}")
-                self.batch_progress_lbl.set_label(f"{item['pkg'].pkgname} kuruluyor...")
-            GLib.idle_add(update_ui)
+        def set_all_working():
+            for it in items:
+                it['icon_widget'].set_from_icon_name("process-working-symbolic")
+                it['row_widget'].set_subtitle("Kuruluyor...")
+            self.batch_progress.set_fraction(0.3)
+            self.batch_progress.set_text(f"{total} paket kuruluyor...")
+            self.batch_progress_lbl.set_label("Toplu paketler tek işlemde kuruluyor...")
+        GLib.idle_add(set_all_working)
 
-            cmd = ["pkexec", actions_script, "install", it['path']]
-            try:
-                proc = Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
-                proc.communicate()
-                success = (proc.returncode == 0)
-            except Exception:
-                success = False
+        paths = [it['path'] for it in items]
+        cmd = ["pkexec", actions_script, "install", *paths]
+        try:
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
+            proc.communicate()
+            success = (proc.returncode == 0)
+        except Exception:
+            success = False
 
-            def update_finish(item=it, ok=success):
-                item['icon_widget'].set_from_icon_name("emblem-ok-symbolic" if ok else "dialog-error-symbolic")
-                item['row_widget'].set_subtitle("Kuruldu" if ok else "Hata!")
-            GLib.idle_add(update_finish)
+        def update_results():
+            for it in items:
+                is_inst = success
+                if not is_inst and os.path.exists("/usr/bin/dpkg-query"):
+                    try:
+                        res = subprocess.run(["dpkg-query", "-W", "-f=${Status}", it['pkg'].pkgname],
+                                             stdout=PIPE, stderr=subprocess.DEVNULL, text=True, check=False)
+                        is_inst = "install ok installed" in res.stdout
+                    except Exception:
+                        pass
 
-        def complete_all():
+                it['icon_widget'].set_from_icon_name("emblem-ok-symbolic" if is_inst else "dialog-error-symbolic")
+                it['row_widget'].set_subtitle("Kuruldu" if is_inst else "Hata!")
+
             self.batch_progress.set_fraction(1.0)
-            self.batch_progress.set_text("Tamamlandı")
-            self.batch_progress_lbl.set_label("Toplu kurulum başarıyla tamamlandı.")
+            status_text = "Toplu kurulum tamamlandı" if success else "İşlem tamamlandı (bazı hatalar olabilir)"
+            self.batch_progress.set_text(status_text)
+            self.batch_progress_lbl.set_label("Tüm paketler kuruldu." if success else "İşlem tamamlandı.")
             self.btn_batch_install.set_sensitive(True)
             self.show_toast("Toplu paket kurulumu tamamlandı!")
-        GLib.idle_add(complete_all)
+        GLib.idle_add(update_results)
 
     # Actions: Install & Remove Single
     def on_install_clicked(self, button):

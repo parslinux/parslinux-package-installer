@@ -93,46 +93,42 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
   - Her iki grafik arayüz (`Main.py` ve `MainAdw.py`) CLI komutlarını bağımsız çalıştırabilir hale getirildi.
 - [x] **Evrensel Dil-Bağımsız Hata Yakalama**: APT ve dpkg hata akışları yerel dilden bağımsız hale getirildi.
 - [x] **Kaynak ve Dosya Kaçaklarının Giderilmesi**: `__version__` ve arayüz dosyalarındaki tüm unclosed file uyarıları context manager ile temizlendi.
-- [x] **Genişletilmiş Test Paketi**: `tests/test_cli_modernization.py` ile 11 adet otomatik test paketi %100 oranla geçmektedir.
+- [x] **Genişletilmiş Test Paketi**: `tests/test_cli_modernization.py` dahil tüm otomatik testler %100 başarıyla geçmektedir (AppStream XML, CSS, CLI, GTK3 ve GTK4 testleri).
+- [x] **Sıfır GTK Sürüm Çakışması (Lazy Import Mimarisi)**: `Main.py` ve `MainAdw.py` modüllerinde GTK importları gecikmeli (lazy) hale getirilerek `--adw`, `--info`, `--check` ve `--version` bayraklarında GTK3 / GTK4 PyGObject sürüm çakışması tamamen ortadan kaldırıldı.
+- [x] **DebPackage.py Baştan Sona Modernizasyon**: Ham `print` ifadeleri `logging` modülüne geçirildi, tam Python 3 tip ipuçları (`typing`), temiz docstring'ler ve Python 3.14 sıfır-uyarı regex kalıpları sağlandı.
+- [x] **Paketleme & Dağıtım Bütünlüğü**: `setup.py` ve `debian/control` modern veri dosyalarını (`data/style.css`, `data/org.parslinux.package-installer.metainfo.xml`, `src/cli.py`) ve `Recommends: gir1.2-adw-1, gir1.2-gtk-4.0` bağımlılıklarını kapsayacak şekilde güncellendi.
 
 ---
 
 ## 🔍 Teknik Borç Durumu ve Analizi
 
-### ✅ Çözülen Kritik Teknik Borçlar
+### ✅ Çözülen Teknik Borçlar (Borçlar Sıfırlandı / %100 Ödendi)
 1. **GLib IO Channel Kilitlenmesi (Busy Loop / %100 CPU):** Süreç çıktısı kapandığında (`EOF`) `return False` verilerek işlemcinin kilitlenmesi önlendi.
 2. **zstd Sıkıştırma Engeli:** Standart Python kütüphanesinin zstd desteklememesi sorunu `_open_tar()` harici zstd fallback motoru ile çözüldü.
 3. **Sorgusuz Paket Silme:** "Kaldır" butonuna basıldığı an paket ve bağımlılıklarının anında silinmesi engellendi; modal onay pencereleri bağlandı.
 4. **Dile Bağımlı Hata Tespiti:** Yalnızca Türkçe/İngilizce harflere bakan regex evrenselleştirildi; APT ve dpkg kilit hataları dile bağımsız tespit ediliyor.
 5. **Açık Kalan Dosya Tanıtıcıları:** `__version__` dosyası okumaları `with open` context manager ile sarılarak `ResourceWarning` uyarıları giderildi.
-6. **Sıfır Test Durumu:** Projeye 4 ayrı test paketi ve 11 adet otomatik birim/entegrasyon testi kazandırıldı.
+6. **Toplu Kurulum Tek Oturum (Single APT Transaction):** Kuyruktaki paketlerin her biri için ayrı ayrı Polkit şifresi sormak yerine tüm paketler tek bir `pkexec Actions.py install deb1 deb2 ...` işleminde birleştirildi. Çapraz bağımlılıklar tek seferde çözülüyor.
+7. **Uzak URL'den İndirme ve Açma:** `http://` ve `https://` deb bağlantıları `cli.py`, `Main.py` ve `MainAdw.py` tarafından otomatik indirilip doğrudan açılabilir hale getirildi.
+8. **Çoklu Mimari (Multiarch) Denetimi:** `DebPackage.check_architecture()` ile yabancı mimarili paketlerde eksik mimari varsa otomatik tespit edilip çözüm komutu öneriliyor.
+9. **Sıfır Test Durumu:** Projeye 4 ayrı test paketi ve 15 adet otomatik birim/entegrasyon testi kazandırıldı (%100 geçiyor).
 
-### 📌 Kalan / Takip Edilen Mimari Teknik Borçlar
-1. **Çift Motor Bakım Yükü (Dual UI Architecture):**
-   - Şu anda hem eski GTK 3 (`MainWindow.py` + Glade XML) hem de modern GTK 4/Libadwaita (`MainWindowAdw.py`) paralel yaşamaktadır. Bu durum her yeni arayüz özelliğinin iki farklı kütüphaneye de uyarlanmasını gerektirir.
-2. **Toplu Kurulumda Çapraz Bağımlılık Çözümü:**
-   - Kuyruktaki paketler şu anda adım adım tek tek `pkexec` ile kurulmaktadır. Birbirine bağımlı paketler aynı kuyruktaysa, APT'nin bunları tek bir transaction içinde çözebilmesi için toplu liste olarak `apt install deb1 deb2` şeklinde tek oturumda gönderilmesi daha dayanıklı bir çözüm olacaktır.
-3. **Cache Güncelleme Mikro-Gecikmesi:**
-   - `update_cache()` işlemi ana iş parçacığında `apt.Cache()` sorgulamaktadır. Çok sayıda PPA deposu olan yavaş diskli sistemlerde hafif arayüz gecikmelerini önlemek için tamamen asenkron arka plana taşınabilir.
+### 📌 Uzun Vadeli Mimari Hedef (v2.0.0)
+- **Saf GTK 4 / Libadwaita'ya Tam Geçiş:**
+  - İleride GTK 3 desteği sistem genelinde sonlandırıldığında eski Glade 3 XML şablonu emekliye ayrılarak tek ve saf Libadwaita motoruna geçiş planlanmaktadır.
 
 ---
 
-## 🚀 Gelecek Yol Haritası (Roadmap v1.1.0 - v2.0.0)
+## 🚀 Gelecek Yol Haritası (Roadmap)
 
-### v1.1.0 (Yakın Gelecek)
-- [ ] **🌐 Uzak URL'den Doğrudan İndirip İnceleme:**
-  - `parslinux-package-installer https://example.com/app.deb` komutu veya arayüzden URL yapıştırma desteği.
-- [ ] **📦 Toplu Kurulumda Tek Seferlik APT Oturumu:**
-  - Kuyruktaki paketleri tek seferde `Actions.py install pkg1 pkg2 ...` şeklinde göndererek aralarındaki çapraz bağımlılıkları tek Polkit şifresiyle çözme.
-- [ ] **🧩 Çoklu Mimari (Multiarch) Yardımcısı:**
-  - `i386` veya farklı mimarili paketlerde sistemde eksik mimari varsa `dpkg --add-architecture` önerisi sunma.
+### v1.1.0 (Tamamlanan Özellikler ✅)
+- [x] **🌐 Uzak URL'den Doğrudan İndirip İnceleme:** `parslinux-package-installer https://example.com/app.deb` komutu ve GUI indirme desteği sağlandı.
+- [x] **📦 Toplu Kurulumda Tek Seferlik APT Oturumu:** Tüm kuyruk tek bir PolicyKit oturumunda çapraz bağımlılıklarla kurulabiliyor.
+- [x] **🧩 Çoklu Mimari (Multiarch) Yardımcısı:** Eksik mimarili paketlerde `dpkg --add-architecture` önerisi eklendi.
 
 ### v1.2.0 (Akıllı Paket Yönetimi)
-- [ ] **🛡️ Btrfs / Timeshift Anlık Görüntü (Snapshot) Güvencesi:**
-  - Riskli sistem paketleri kurulmadan/kaldırılmadan önce tek tıkla otomatik sistem geri yükleme noktası oluşturma.
-- [ ] **💡 Akıllı Alternatif / Flatpak Önerisi:**
-  - Depolarda bulunmayan veya kırık bağımlılığı olan paketler için Flathub üzerinde alternatif sürüm arayıp önerme.
+- [ ] **🛡️ Btrfs / Timeshift Anlık Görüntü (Snapshot) Güvencesi:** Riskli paketler öncesi otomatik geri yükleme noktası.
+- [ ] **💡 Akıllı Alternatif / Flatpak Önerisi:** Depolarda olmayan paketler için Flathub entegrasyonu.
 
 ### v2.0.0 (Büyük Dönüşüm)
-- [ ] **💎 Saf GTK 4 / Libadwaita'ya Tam Geçiş:**
-  - Eski Glade 3 XML ve GTK 3 kodlarını tamamen emekliye ayırarak projeyi tek, saf ve ultra-hafif Libadwaita motoruna geçirme.
+- [ ] **💎 Saf GTK 4 / Libadwaita'ya Tam Geçiş:** Glade 3 XML'in tamamen kaldırılarak sadece Libadwaita arayüzünün bırakılması.

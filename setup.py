@@ -38,6 +38,7 @@ with open("src/__version__", "w") as f:
 data_files = [
     ("/usr/share/applications", ["org.parslinux.package-installer.desktop"]),
     ("/usr/share/metainfo", ["data/org.parslinux.package-installer.metainfo.xml"]),
+    ("/usr/share/parslinux/parslinux-package-installer/data", ["data/style.css"]),
     ("/usr/share/parslinux/parslinux-package-installer/ui", ["ui/MainWindow.glade", "ui/style.css"]),
     ("/usr/share/parslinux/parslinux-package-installer/src",
      ["src/Actions.py", "src/Main.py", "src/MainWindow.py", "src/DebPackage.py", "src/cli.py", "src/MainAdw.py", "src/MainWindowAdw.py", "src/__version__"]),

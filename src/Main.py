@@ -2,75 +2,91 @@
 # -*- coding: utf-8 -*-
 """
 Main entry point for parslinux-package-installer (GTK3 frontend).
+Supports CLI package inspection, batch queue, and seamless delegation to GTK4 Libadwaita.
 """
 
 import argparse
 import logging
 import os
 import sys
-from typing import List
+from typing import Any, List, Optional
 
-import gi
-
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gio, Gtk, GLib
-
-from MainWindow import MainWindow
+from cli import cli_check, cli_info, get_version, is_remote_url, download_remote_deb
 
 logger = logging.getLogger("parslinux-package-installer")
 
 
-class Application(Gtk.Application):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(
-            *args,
-            application_id="org.parslinux.package-installer",
-            flags=Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE,
-            **kwargs
-        )
-        self.window = None
-        GLib.set_prgname("org.parslinux.package-installer")
+def _get_application_class() -> Any:
+    """Lazily load GTK3 and return Application class."""
+    import gi
+    gi.require_version('Gtk', '3.0')
+    from gi.repository import Gio, GLib, Gtk
+    from MainWindow import MainWindow
 
-    def do_activate(self) -> None:
-        target_files: List[str] = []
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-") and os.path.exists(arg) and arg.lower().endswith(".deb"):
-                target_files.append(os.path.abspath(arg))
+    class Application(Gtk.Application):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(
+                *args,
+                application_id="org.parslinux.package-installer",
+                flags=Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE,
+                **kwargs
+            )
+            self.window: Optional[MainWindow] = None
+            GLib.set_prgname("org.parslinux.package-installer")
 
-        if self.window is not None:
-            if len(target_files) == 1:
-                self.window.from_file(target_files[0])
-            elif len(target_files) > 1:
-                self.window.open_batch(target_files)
-            self.window.window.present()
-        else:
-            first_file = Gio.File.new_for_path(target_files[0]) if len(target_files) == 1 else None
-            self.window = MainWindow(self, first_file)
-            if len(target_files) > 1:
-                self.window.open_batch(target_files)
+        def do_activate(self) -> None:
+            target_files: List[str] = []
+            for arg in sys.argv[1:]:
+                if arg.startswith("-"):
+                    continue
+                if is_remote_url(arg):
+                    try:
+                        downloaded = download_remote_deb(arg)
+                        target_files.append(downloaded)
+                    except Exception as e:
+                        logger.error("Failed to download remote deb %s: %s", arg, e)
+                elif os.path.exists(arg) and arg.lower().endswith(".deb"):
+                    target_files.append(os.path.abspath(arg))
 
-    def do_open(self, files: List[Gio.File], filecount: int, hint: str) -> None:
-        target_paths: List[str] = []
-        for f in files:
-            p = f.get_path()
-            if p and os.path.exists(p) and p.lower().endswith(".deb"):
-                target_paths.append(p)
+            if self.window is not None:
+                if len(target_files) == 1:
+                    self.window.from_file(target_files[0])
+                elif len(target_files) > 1:
+                    self.window.open_batch(target_files)
+                self.window.window.present()
+            else:
+                first_file = Gio.File.new_for_path(target_files[0]) if len(target_files) == 1 else None
+                self.window = MainWindow(self, first_file)
+                if len(target_files) > 1:
+                    self.window.open_batch(target_files)
 
-        if self.window is None:
-            first_file = files[0] if len(target_paths) == 1 else None
-            self.window = MainWindow(self, first_file)
+        def do_open(self, files: List[Gio.File], filecount: int, hint: str) -> None:
+            target_paths: List[str] = []
+            for f in files:
+                p = f.get_path()
+                if p and os.path.exists(p) and p.lower().endswith(".deb"):
+                    target_paths.append(p)
 
-        if len(target_paths) == 1:
-            self.window.from_file(target_paths[0])
-            self.window.window.present()
-        elif len(target_paths) > 1:
-            self.window.open_batch(target_paths)
-            self.window.window.present()
-        else:
-            self.window.window.present()
+            if self.window is None:
+                first_file = files[0] if len(target_paths) == 1 else None
+                self.window = MainWindow(self, first_file)
+
+            if len(target_paths) == 1:
+                self.window.from_file(target_paths[0])
+                self.window.window.present()
+            elif len(target_paths) > 1:
+                self.window.open_batch(target_paths)
+                self.window.window.present()
+            else:
+                self.window.window.present()
+
+    return Application
 
 
-from cli import cli_info, cli_check
+def __getattr__(name: str) -> Any:
+    if name == "Application":
+        return _get_application_class()
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 def main() -> int:
@@ -95,16 +111,16 @@ def main() -> int:
         datefmt="%H:%M:%S"
     )
 
+    if args.adw:
+        if '--adw' in sys.argv:
+            sys.argv.remove('--adw')
+        if '--gtk4' in sys.argv:
+            sys.argv.remove('--gtk4')
+        import MainAdw
+        return MainAdw.main()
+
     if args.version:
-        ver = "1.0.0"
-        ver_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "__version__")
-        if os.path.exists(ver_file):
-            try:
-                with open(ver_file, "r", encoding="utf-8") as f:
-                    ver = f.readline().strip()
-            except Exception:
-                pass
-        print(f"Pars Linux Package Installer v{ver}")
+        print(f"Pars Linux Package Installer v{get_version()}")
         return 0
 
     if args.info:
@@ -113,11 +129,8 @@ def main() -> int:
     if args.check:
         return cli_check(args.check)
 
-    if args.adw:
-        import MainAdw
-        return MainAdw.main()
-
-    app = Application()
+    app_cls = _get_application_class()
+    app = app_cls()
     return app.run(sys.argv)
 
 

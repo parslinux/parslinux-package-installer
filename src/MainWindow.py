@@ -1072,46 +1072,64 @@ class MainWindow:
         actions_script = self.get_actions_script()
         total = len(items)
 
-        for step, (row_idx, fp, pkgname) in enumerate(items):
-            def set_current(idx=row_idx, name=pkgname, cur_step=step):
-                self.batch_store[idx][1] = "process-working-symbolic"
-                self.batch_store[idx][4] = _("Kuruluyor...")
-                frac = cur_step / float(total)
-                self.batch_progressbar.set_fraction(frac)
-                self.batch_progressbar.set_text(f"({cur_step + 1}/{total}) {name}")
-                self.batch_progress_label.set_text(f"{name} kuruluyor...")
-            GLib.idle_add(set_current)
+        # 1. Set all items to working status in UI
+        def set_all_working():
+            for row_idx, _, pkgname in items:
+                self.batch_store[row_idx][1] = "process-working-symbolic"
+                self.batch_store[row_idx][4] = _("Kuruluyor...")
+            self.batch_progressbar.set_fraction(0.3)
+            self.batch_progressbar.set_text(f"{total} {_('paket kuruluyor...')}")
+            self.batch_progress_label.set_text(_("Tek işlemde toplu APT kurulumu yürütülüyor..."))
+        GLib.idle_add(set_all_working)
 
-            cmd = ["pkexec", actions_script, "install", fp]
-            try:
-                proc = Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
-                proc.communicate()
-                success = (proc.returncode == 0)
-            except Exception as e:
-                logger.error("Failed to run action on %s: %s", fp, e)
-                success = False
+        # 2. Run unified batch installation via pkexec Actions.py install *paths
+        deb_paths = [fp for _, fp, _ in items]
+        cmd = ["pkexec", actions_script, "install", *deb_paths]
+        try:
+            proc = Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
+            proc.communicate()
+            success = (proc.returncode == 0)
+        except Exception as e:
+            logger.error("Failed to run batch action: %s", e)
+            success = False
 
-            def set_result(idx=row_idx, ok=success):
-                if ok:
-                    self.batch_store[idx][1] = "emblem-ok-symbolic"
-                    self.batch_store[idx][4] = _("Kuruldu")
+        # 3. Update result on each item in UI
+        def update_results():
+            for row_idx, fp, pkgname in items:
+                if success:
+                    self.batch_store[row_idx][1] = "emblem-ok-symbolic"
+                    self.batch_store[row_idx][4] = _("Kuruldu")
                 else:
-                    self.batch_store[idx][1] = "dialog-error-symbolic"
-                    self.batch_store[idx][4] = _("Hata!")
-            GLib.idle_add(set_result)
+                    # Check if specifically this package got installed anyway
+                    is_inst = False
+                    if os.path.exists("/usr/bin/dpkg-query"):
+                        try:
+                            check = subprocess.run(["dpkg-query", "-W", "-f=${Status}", pkgname],
+                                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, check=False)
+                            is_inst = "install ok installed" in check.stdout
+                        except Exception:
+                            pass
+                    if is_inst:
+                        self.batch_store[row_idx][1] = "emblem-ok-symbolic"
+                        self.batch_store[row_idx][4] = _("Kuruldu")
+                    else:
+                        self.batch_store[row_idx][1] = "dialog-error-symbolic"
+                        self.batch_store[row_idx][4] = _("Hata!")
 
-        def finish_batch():
             self.batch_progressbar.set_fraction(1.0)
-            self.batch_progressbar.set_text(_("Tüm işlemler tamamlandı"))
-            self.batch_progress_label.set_text(_("Toplu paket kurulumu başarıyla tamamlandı."))
+            status_text = _("Toplu kurulum tamamlandı") if success else _("İşlem hatalarla tamamlandı")
+            self.batch_progressbar.set_text(status_text)
+            self.batch_progress_label.set_text(
+                _("Tüm paketler başarıyla kuruldu.") if success else _("Bazı paketler kurulamadı.")
+            )
             self.batch_install_btn.set_sensitive(True)
             self.batch_select_all_btn.set_sensitive(True)
             self.batch_add_btn.set_sensitive(True)
             self.batch_clear_btn.set_sensitive(True)
             self.batch_back_btn.set_sensitive(True)
             try:
-                notif = Notify.Notification.new(_("Toplu Kurulum"), _("Tüm paketlerin kurulum işlemi tamamlandı."), "package-x-generic")
+                notif = Notify.Notification.new(_("Toplu Kurulum"), status_text, "package-x-generic")
                 notif.show()
             except Exception:
                 pass
-        GLib.idle_add(finish_batch)
+        GLib.idle_add(update_results)

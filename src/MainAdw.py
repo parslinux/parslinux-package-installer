@@ -1,63 +1,92 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Main entry point for parslinux-package-installer (GTK 4 / Libadwaita frontend).
+"""
 
+import argparse
+import logging
 import os
 import sys
+from typing import Any, List, Optional
 
-import gi
+from cli import cli_check, cli_info, get_version, is_remote_url, download_remote_deb
 
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
-from gi.repository import Gio, GLib, Adw
-
-from MainWindowAdw import MainWindowAdw
+logger = logging.getLogger("parslinux-package-installer-adw")
 
 
-class ApplicationAdw(Adw.Application):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, application_id="org.parslinux.package-installer",
-                         flags=Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE, **kwargs)
-        self.window = None
-        GLib.set_prgname("org.parslinux.package-installer")
+def _get_adw_application_class() -> Any:
+    """Lazily load GTK4 and Libadwaita and return ApplicationAdw class."""
+    import gi
+    gi.require_version('Gtk', '4.0')
+    gi.require_version('Adw', '1')
+    from gi.repository import Adw, Gio, GLib
+    from MainWindowAdw import MainWindowAdw
 
-    def do_activate(self):
-        target_files = []
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-") and os.path.exists(arg) and arg.lower().endswith(".deb"):
-                target_files.append(os.path.abspath(arg))
+    class ApplicationAdw(Adw.Application):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(
+                *args,
+                application_id="org.parslinux.package-installer",
+                flags=Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE,
+                **kwargs
+            )
+            self.window: Optional[MainWindowAdw] = None
+            GLib.set_prgname("org.parslinux.package-installer")
 
-        if self.window is None:
-            first_file = target_files[0] if len(target_files) == 1 else None
-            self.window = MainWindowAdw(self, first_file)
+        def do_activate(self) -> None:
+            target_files: List[str] = []
+            for arg in sys.argv[1:]:
+                if arg.startswith("-"):
+                    continue
+                if is_remote_url(arg):
+                    try:
+                        downloaded = download_remote_deb(arg)
+                        target_files.append(downloaded)
+                    except Exception as e:
+                        logger.error("Failed to download remote deb %s: %s", arg, e)
+                elif os.path.exists(arg) and arg.lower().endswith(".deb"):
+                    target_files.append(os.path.abspath(arg))
 
-        if len(target_files) == 1:
-            self.window.from_file(target_files[0])
-        elif len(target_files) > 1:
-            self.window.open_batch(target_files)
+            if self.window is None:
+                first_file = target_files[0] if len(target_files) == 1 else None
+                self.window = MainWindowAdw(self, first_file)
 
-        self.window.present()
+            if len(target_files) == 1:
+                self.window.from_file(target_files[0])
+            elif len(target_files) > 1:
+                self.window.open_batch(target_files)
 
-    def do_open(self, files, filecount, hint):
-        target_paths = []
-        for f in files:
-            p = f.get_path()
-            if p and os.path.exists(p) and p.lower().endswith(".deb"):
-                target_paths.append(p)
+            self.window.present()
 
-        if self.window is None:
-            first_file = target_paths[0] if len(target_paths) == 1 else None
-            self.window = MainWindowAdw(self, first_file)
+        def do_open(self, files: List[Gio.File], filecount: int, hint: str) -> None:
+            target_paths: List[str] = []
+            for f in files:
+                p = f.get_path()
+                if p and os.path.exists(p) and p.lower().endswith(".deb"):
+                    target_paths.append(p)
 
-        if len(target_paths) == 1:
-            self.window.from_file(target_paths[0])
-        elif len(target_paths) > 1:
-            self.window.open_batch(target_paths)
+            if self.window is None:
+                first_file = target_paths[0] if len(target_paths) == 1 else None
+                self.window = MainWindowAdw(self, first_file)
 
-        self.window.present()
+            if len(target_paths) == 1:
+                self.window.from_file(target_paths[0])
+            elif len(target_paths) > 1:
+                self.window.open_batch(target_paths)
+
+            self.window.present()
+
+    return ApplicationAdw
 
 
-def main():
-    import argparse
+def __getattr__(name: str) -> Any:
+    if name == "ApplicationAdw":
+        return _get_adw_application_class()
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+def main() -> int:
     parser = argparse.ArgumentParser(
         prog="parslinux-package-installer-adw",
         description="Pars Linux Deb Package Installer (GTK 4 / Libadwaita Interface)"
@@ -70,27 +99,26 @@ def main():
 
     args, unknown = parser.parse_known_args()
 
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S"
+    )
+
     if args.version:
-        ver = "1.0.0"
-        ver_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "__version__")
-        if os.path.exists(ver_file):
-            try:
-                with open(ver_file, "r", encoding="utf-8") as f:
-                    ver = f.readline().strip()
-            except Exception:
-                pass
-        print(f"Pars Linux Package Installer (Adw) v{ver}")
+        print(f"Pars Linux Package Installer (Adw) v{get_version()}")
         return 0
 
     if args.info:
-        from cli import cli_info
         return cli_info(args.info)
 
     if args.check:
-        from cli import cli_check
         return cli_check(args.check)
 
-    app = ApplicationAdw()
+    app_cls = _get_adw_application_class()
+    app = app_cls()
     return app.run(sys.argv)
 
 
