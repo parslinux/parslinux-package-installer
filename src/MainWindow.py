@@ -18,7 +18,7 @@ import gi
 
 gi.require_version('Gtk', '3.0')
 gi.require_version("Notify", "0.7")
-from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Notify
+from gi.repository import Gdk, GdkPixbuf, Gio, GLib, GObject, Gtk, Notify
 
 from DebPackage import DebPackage, HAVE_APT
 
@@ -79,13 +79,44 @@ class MainWindow(object):
         except Exception:
             pass
 
+        # Resolve icon and configure logo across window, empty state, and about dialog
+        icon_candidates = [
+            "/usr/share/icons/hicolor/scalable/apps/parslinux-package-installer.svg",
+            "/usr/share/parslinux/parslinux-package-installer/images/parslinux-package-installer.svg",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "images", "parslinux-package-installer.svg")
+        ]
+        self.icon_path = None
+        for cand in icon_candidates:
+            if os.path.exists(cand):
+                self.icon_path = os.path.abspath(cand)
+                break
+
+        if self.icon_path:
+            try:
+                self.window.set_icon_from_file(self.icon_path)
+                logo_pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(self.icon_path, 96, 96, True)
+                self.about_dialog.set_logo(logo_pb)
+                empty_icon = self.builder.get_object("empty_icon")
+                if empty_icon:
+                    empty_icon.set_from_pixbuf(logo_pb)
+            except Exception as e:
+                print("Note: Could not set icon pixbuf:", e)
+
         self.about_dialog.set_program_name(_("Pars Linux Package Installer"))
         if self.about_dialog.get_titlebar() is None:
             about_headerbar = Gtk.HeaderBar.new()
             about_headerbar.set_show_close_button(True)
             about_headerbar.set_title(_("About Pars Linux Package Installer"))
-            about_headerbar.pack_start(
-                Gtk.Image.new_from_icon_name("parslinux-package-installer", Gtk.IconSize.LARGE_TOOLBAR))
+            if self.icon_path:
+                try:
+                    bar_pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(self.icon_path, 24, 24, True)
+                    about_headerbar.pack_start(Gtk.Image.new_from_pixbuf(bar_pb))
+                except Exception:
+                    about_headerbar.pack_start(
+                        Gtk.Image.new_from_icon_name("parslinux-package-installer", Gtk.IconSize.LARGE_TOOLBAR))
+            else:
+                about_headerbar.pack_start(
+                    Gtk.Image.new_from_icon_name("parslinux-package-installer", Gtk.IconSize.LARGE_TOOLBAR))
             about_headerbar.show_all()
             self.about_dialog.set_titlebar(about_headerbar)
 
@@ -286,6 +317,17 @@ class MainWindow(object):
         self.progressbar.set_show_text(False)
         self.progressbar.set_fraction(0)
 
+        # Populate files list
+        if hasattr(self, "files_store") and self.package:
+            self.files_store.clear()
+            details = self.package.get_file_details()
+            for d in details:
+                icon = "folder-symbolic" if d["is_dir"] else ("emblem-symbolic-link" if d["is_sym"] else ("application-x-executable-symbolic" if d["is_exec"] else "text-x-generic-symbolic"))
+                size_str = "-" if d["is_dir"] else self._format_size(d["size"])
+                self.files_store.append([icon, d["name"], size_str, d["mode"]])
+            if hasattr(self, "file_count_label") and self.file_count_label:
+                self.file_count_label.set_text(f"{len(details)} dosya")
+
         self.window.set_focus(None)
 
     def package_main(self, actioned, status, packagefailure):
@@ -324,11 +366,16 @@ class MainWindow(object):
         if self.pid:
             print("There is a process currently running.")
             return
+        paths = []
         for uri in selection.get_uris():
             file = Gio.File.new_for_uri(uri)
-            path = file.get_path()
-            if path:
-                self.from_file(path)
+            p = file.get_path()
+            if p and p.lower().endswith(".deb") and os.path.exists(p):
+                paths.append(p)
+        if len(paths) == 1:
+            self.from_file(paths[0])
+        elif len(paths) > 1:
+            self.open_batch(paths)
 
     def define_components(self):
         self.button1 = self.builder.get_object("button1")
@@ -388,6 +435,27 @@ class MainWindow(object):
         self.BrokenBox = self.builder.get_object("BrokenBox")
         self.cannotclose_dialog = self.builder.get_object("cannotclose_dialog")
         self.about_dialog = self.builder.get_object("about_dialog")
+
+        # Files tab components
+        self.files_treeview = self.builder.get_object("files_treeview")
+        self.file_search_entry = self.builder.get_object("file_search_entry")
+        self.file_count_label = self.builder.get_object("file_count_label")
+        self.setup_files_view()
+
+        # Batch installation components
+        self.BatchBox = self.builder.get_object("BatchBox")
+        self.batch_title = self.builder.get_object("batch_title")
+        self.batch_subtitle = self.builder.get_object("batch_subtitle")
+        self.batch_summary_label = self.builder.get_object("batch_summary_label")
+        self.batch_treeview = self.builder.get_object("batch_treeview")
+        self.batch_progressbar = self.builder.get_object("batch_progressbar")
+        self.batch_progress_label = self.builder.get_object("batch_progress_label")
+        self.batch_select_all_btn = self.builder.get_object("batch_select_all_btn")
+        self.batch_add_btn = self.builder.get_object("batch_add_btn")
+        self.batch_clear_btn = self.builder.get_object("batch_clear_btn")
+        self.batch_install_btn = self.builder.get_object("batch_install_btn")
+        self.batch_back_btn = self.builder.get_object("batch_back_btn")
+        self.setup_batch_view()
 
     def start(self, debpackage):
         self.errorlabel.set_visible(False)
@@ -570,20 +638,35 @@ class MainWindow(object):
         self.window.get_application().quit()
 
     def on_openbutton_clicked(self, button):
-        self.filechooser.run()
-        self.filechooser.hide()
+        self.filechooser.set_select_multiple(True)
+        res = self.filechooser.run()
+        if res == Gtk.ResponseType.ACCEPT or res == Gtk.ResponseType.OK or res == -5:
+            filenames = self.filechooser.get_filenames()
+            self.filechooser.hide()
+            if len(filenames) == 1:
+                self.from_file(filenames[0])
+            elif len(filenames) > 1:
+                self.open_batch(filenames)
+        else:
+            self.filechooser.hide()
 
     def on_selectbutton_clicked(self, widget):
-        self.filename = self.filechooser.get_filename()
+        self.filechooser.set_select_multiple(True)
+        filenames = self.filechooser.get_filenames()
         self.filechooser.hide()
-        if self.filename:
-            self.from_file(self.filename)
+        if len(filenames) == 1:
+            self.from_file(filenames[0])
+        elif len(filenames) > 1:
+            self.open_batch(filenames)
 
     def on_filechooser_file_activated(self, widget):
-        self.filename = self.filechooser.get_filename()
+        self.filechooser.set_select_multiple(True)
+        filenames = self.filechooser.get_filenames()
         self.filechooser.hide()
-        if self.filename:
-            self.from_file(self.filename)
+        if len(filenames) == 1:
+            self.from_file(filenames[0])
+        elif len(filenames) > 1:
+            self.open_batch(filenames)
 
     def on_aboutbutton_clicked(self, button):
         self.about_dialog.run()
@@ -792,3 +875,285 @@ class MainWindow(object):
 
         if hasattr(self, "notification") and self.notification and not self.window.is_active():
             self.notification.show()
+
+    @staticmethod
+    def _format_size(num_bytes):
+        if not num_bytes or num_bytes == "-":
+            return "-"
+        try:
+            n = float(num_bytes)
+            for unit in ["B", "KiB", "MiB", "GiB"]:
+                if n < 1024.0:
+                    return f"{n:.1f} {unit}" if unit != "B" else f"{int(n)} B"
+                n /= 1024.0
+            return f"{n:.1f} TiB"
+        except Exception:
+            return str(num_bytes)
+
+    def setup_files_view(self):
+        if not self.files_treeview:
+            return
+        self.files_store = Gtk.ListStore(str, str, str, str) # icon, path, size, mode
+        self.files_filter = self.files_store.filter_new()
+        self.files_filter.set_visible_func(self.files_filter_func)
+        self.files_treeview.set_model(self.files_filter)
+
+        for col in self.files_treeview.get_columns():
+            self.files_treeview.remove_column(col)
+
+        col_file = Gtk.TreeViewColumn(_("Dosya Yolu"))
+        col_file.set_resizable(True)
+        col_file.set_expand(True)
+
+        cr_icon = Gtk.CellRendererPixbuf()
+        col_file.pack_start(cr_icon, False)
+        col_file.add_attribute(cr_icon, "icon-name", 0)
+
+        cr_text = Gtk.CellRendererText()
+        cr_text.set_property("ellipsize", 1)
+        col_file.pack_start(cr_text, True)
+        col_file.add_attribute(cr_text, "text", 1)
+        self.files_treeview.append_column(col_file)
+
+        col_size = Gtk.TreeViewColumn(_("Boyut"))
+        col_size.set_resizable(True)
+        cr_size = Gtk.CellRendererText(xalign=1.0)
+        col_size.pack_start(cr_size, False)
+        col_size.add_attribute(cr_size, "text", 2)
+        self.files_treeview.append_column(col_size)
+
+        if self.file_search_entry:
+            self.file_search_entry.connect("search-changed", self.on_file_search_changed)
+
+    def files_filter_func(self, model, iter, data):
+        if not self.file_search_entry:
+            return True
+        query = self.file_search_entry.get_text().strip().lower()
+        if not query:
+            return True
+        val = model.get_value(iter, 1)
+        return query in (val.lower() if val else "")
+
+    def on_file_search_changed(self, entry):
+        if hasattr(self, "files_filter"):
+            self.files_filter.refilter()
+            query = entry.get_text().strip()
+            total = len(self.files_store)
+            if query:
+                matching = sum(1 for row in self.files_store if query.lower() in row[1].lower())
+                self.file_count_label.set_text(f"{matching} / {total} eşleşti")
+            else:
+                self.file_count_label.set_text(f"{total} dosya")
+
+    def setup_batch_view(self):
+        if not self.batch_treeview:
+            return
+        self.batch_store = Gtk.ListStore(bool, str, str, str, str, str, str)
+        self.batch_treeview.set_model(self.batch_store)
+
+        for col in self.batch_treeview.get_columns():
+            self.batch_treeview.remove_column(col)
+
+        col_check = Gtk.TreeViewColumn("")
+        cr_toggle = Gtk.CellRendererToggle()
+        cr_toggle.connect("toggled", self.on_batch_row_toggled)
+        col_check.pack_start(cr_toggle, False)
+        col_check.add_attribute(cr_toggle, "active", 0)
+        self.batch_treeview.append_column(col_check)
+
+        col_icon = Gtk.TreeViewColumn("")
+        cr_status_icon = Gtk.CellRendererPixbuf()
+        col_icon.pack_start(cr_status_icon, False)
+        col_icon.add_attribute(cr_status_icon, "icon-name", 1)
+        self.batch_treeview.append_column(col_icon)
+
+        col_pkg = Gtk.TreeViewColumn(_("Paket"))
+        col_pkg.set_resizable(True)
+        col_pkg.set_expand(True)
+        cr_pkg = Gtk.CellRendererText(weight=600)
+        col_pkg.pack_start(cr_pkg, True)
+        col_pkg.add_attribute(cr_pkg, "text", 2)
+        self.batch_treeview.append_column(col_pkg)
+
+        col_ver = Gtk.TreeViewColumn(_("Sürüm"))
+        col_ver.set_resizable(True)
+        cr_ver = Gtk.CellRendererText()
+        col_ver.pack_start(cr_ver, False)
+        col_ver.add_attribute(cr_ver, "text", 3)
+        self.batch_treeview.append_column(col_ver)
+
+        col_stat = Gtk.TreeViewColumn(_("Durum"))
+        col_stat.set_resizable(True)
+        cr_stat = Gtk.CellRendererText()
+        col_stat.pack_start(cr_stat, False)
+        col_stat.add_attribute(cr_stat, "text", 4)
+        self.batch_treeview.append_column(col_stat)
+
+        col_size = Gtk.TreeViewColumn(_("Boyut"))
+        col_size.set_resizable(True)
+        cr_size = Gtk.CellRendererText(xalign=1.0)
+        col_size.pack_start(cr_size, False)
+        col_size.add_attribute(cr_size, "text", 5)
+        self.batch_treeview.append_column(col_size)
+
+        if self.batch_select_all_btn:
+            self.batch_select_all_btn.connect("clicked", self.on_batch_select_all_clicked)
+        if self.batch_add_btn:
+            self.batch_add_btn.connect("clicked", self.on_batch_add_btn_clicked)
+        if self.batch_clear_btn:
+            self.batch_clear_btn.connect("clicked", self.on_batch_clear_btn_clicked)
+        if self.batch_back_btn:
+            self.batch_back_btn.connect("clicked", self.on_batch_back_btn_clicked)
+        if self.batch_install_btn:
+            self.batch_install_btn.connect("clicked", self.on_batch_install_btn_clicked)
+
+    def on_batch_row_toggled(self, cell, path_str):
+        self.batch_store[path_str][0] = not self.batch_store[path_str][0]
+        has_selected = any(row[0] for row in self.batch_store)
+        if self.batch_install_btn:
+            self.batch_install_btn.set_sensitive(has_selected)
+
+    def on_batch_select_all_clicked(self, button):
+        all_selected = all(row[0] for row in self.batch_store)
+        new_state = not all_selected
+        for row in self.batch_store:
+            row[0] = new_state
+        if self.batch_install_btn:
+            self.batch_install_btn.set_sensitive(new_state and len(self.batch_store) > 0)
+
+    def on_batch_clear_btn_clicked(self, button):
+        self.batch_store.clear()
+        self.mainstack.set_visible_child_name("empty")
+        self.openbutton.set_visible(False)
+
+    def on_batch_back_btn_clicked(self, button):
+        if self.debianpackage and os.path.exists(self.debianpackage):
+            self.mainstack.set_visible_child_name("package")
+        else:
+            self.mainstack.set_visible_child_name("empty")
+
+    def on_batch_add_btn_clicked(self, button):
+        self.filechooser.set_select_multiple(True)
+        res = self.filechooser.run()
+        if res == Gtk.ResponseType.ACCEPT or res == Gtk.ResponseType.OK or res == -5:
+            filenames = self.filechooser.get_filenames()
+            self.filechooser.hide()
+            if filenames:
+                self.add_to_batch(filenames)
+        else:
+            self.filechooser.hide()
+
+    def open_batch(self, file_paths):
+        self.batch_store.clear()
+        self.add_to_batch(file_paths)
+
+    def add_to_batch(self, file_paths):
+        self.openbutton.set_visible(True)
+        self.mainstack.set_visible_child_name("batch")
+
+        existing_paths = {row[6] for row in self.batch_store}
+        self.update_cache()
+
+        for fp in file_paths:
+            fp = os.path.abspath(fp)
+            if fp in existing_paths or not os.path.exists(fp) or not fp.lower().endswith(".deb"):
+                continue
+            try:
+                pkg = DebPackage(fp, cache=self.cache)
+                pkgname = pkg.pkgname
+                version = pkg.get("Version", "-")
+                raw_size = pkg.get("Installed-Size", "0")
+                try:
+                    size_kb = int(raw_size) * 1024
+                    size_str = self._format_size(size_kb)
+                except Exception:
+                    size_str = raw_size
+
+                check_status = pkg.compare_to_version_in_cache()
+                status_desc = {
+                    0: _("Kurulabilir"),
+                    1: _("Sürüm Düşürülebilir"),
+                    2: _("Zaten Kurulu"),
+                    3: _("Yükseltilebilir")
+                }.get(check_status, _("Kurulabilir"))
+
+                icon = "emblem-default-symbolic"
+                self.batch_store.append([True, icon, pkgname, version, status_desc, size_str, fp])
+                existing_paths.add(fp)
+            except Exception as e:
+                print(f"Error parsing {fp} in batch: {e}")
+                self.batch_store.append([False, "dialog-error-symbolic", os.path.basename(fp), "-", _("Geçersiz Paket"), "-", fp])
+
+        total_pkgs = len(self.batch_store)
+        selected_pkgs = sum(1 for row in self.batch_store if row[0])
+        self.batch_subtitle.set_text(f"{total_pkgs} paket kuyrukta")
+        self.batch_summary_label.set_text(f"{selected_pkgs} paket seçili")
+        if self.batch_install_btn:
+            self.batch_install_btn.set_sensitive(selected_pkgs > 0)
+        self.batch_progressbar.set_visible(False)
+        self.batch_progress_label.set_visible(False)
+
+    def on_batch_install_btn_clicked(self, button):
+        items = []
+        for i, row in enumerate(self.batch_store):
+            if row[0]:
+                items.append((i, row[6], row[2]))
+
+        if not items:
+            return
+
+        self.batch_install_btn.set_sensitive(False)
+        self.batch_select_all_btn.set_sensitive(False)
+        self.batch_add_btn.set_sensitive(False)
+        self.batch_clear_btn.set_sensitive(False)
+        self.batch_back_btn.set_sensitive(False)
+
+        self.batch_progressbar.set_visible(True)
+        self.batch_progress_label.set_visible(True)
+        self.batch_progressbar.set_fraction(0.0)
+        self.batch_progressbar.set_text(_("Toplu kurulum başlatılıyor..."))
+
+        threading.Thread(target=self._batch_worker, args=(items,), daemon=True).start()
+
+    def _batch_worker(self, items):
+        actions_script = self.get_actions_script()
+        total = len(items)
+
+        for step, (row_idx, fp, pkgname) in enumerate(items):
+            def set_current(idx=row_idx, name=pkgname, cur_step=step):
+                self.batch_store[idx][1] = "process-working-symbolic"
+                self.batch_store[idx][4] = _("Kuruluyor...")
+                frac = cur_step / float(total)
+                self.batch_progressbar.set_fraction(frac)
+                self.batch_progressbar.set_text(f"({cur_step + 1}/{total}) {name}")
+                self.batch_progress_label.set_text(f"{name} kuruluyor...")
+            GLib.idle_add(set_current)
+
+            cmd = ["pkexec", actions_script, "install", fp]
+            try:
+                proc = Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
+                stdout, stderr = proc.communicate()
+                success = (proc.returncode == 0)
+            except Exception as e:
+                success = False
+
+            def set_result(idx=row_idx, ok=success):
+                if ok:
+                    self.batch_store[idx][1] = "emblem-ok-symbolic"
+                    self.batch_store[idx][4] = _("Kuruldu")
+                else:
+                    self.batch_store[idx][1] = "dialog-error-symbolic"
+                    self.batch_store[idx][4] = _("Hata!")
+            GLib.idle_add(set_result)
+
+        def finish_batch():
+            self.batch_progressbar.set_fraction(1.0)
+            self.batch_progressbar.set_text(_("Tüm işlemler tamamlandı"))
+            self.batch_progress_label.set_text(_("Toplu paket kurulumu başarıyla tamamlandı."))
+            self.batch_install_btn.set_sensitive(True)
+            self.batch_select_all_btn.set_sensitive(True)
+            self.batch_add_btn.set_sensitive(True)
+            self.batch_clear_btn.set_sensitive(True)
+            self.batch_back_btn.set_sensitive(True)
+            self.notify(_("Toplu Kurulum"), _("Tüm paketlerin kurulum işlemi tamamlandı."), "package-x-generic")
+        GLib.idle_add(finish_batch)

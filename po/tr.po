@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-13 22:57+0300\n"
+"POT-Creation-Date: 2026-10-13 23:43+0300\n"
 "PO-Revision-Date: 2026-02-12 00:13+0300\n"
 "Last-Translator: Fatih Altun <fatih.altun@pardus.org.tr>\n"
 "Language-Team: Turkish <dev@pardus.org.tr>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Gtranslator 48.0\n"
 
-#: ui/MainWindow.glade:11 ui/MainWindow.glade:966
+#: ui/MainWindow.glade:11 ui/MainWindow.glade:1245
 msgid "Info"
 msgstr "Bilgi"
 
@@ -35,57 +35,61 @@ msgstr "Dosya Seç"
 msgid "Select"
 msgstr "Seç"
 
-#: ui/MainWindow.glade:158
+#: ui/MainWindow.glade:172 ui/MainWindow.glade:1531 src/MainWindow.py:105
+msgid "Pars Linux Package Installer"
+msgstr "Pars Linux Paket Kurucu"
+
+#: ui/MainWindow.glade:188
 msgid "Select a deb package or drag and drop it here."
 msgstr "Bir deb paketi seçin veya buraya sürükleyip bırakın."
 
-#: ui/MainWindow.glade:168 ui/MainWindow.glade:1181
+#: ui/MainWindow.glade:201 ui/MainWindow.glade:1540
 msgid "Open"
 msgstr "Aç"
 
-#: ui/MainWindow.glade:215
+#: ui/MainWindow.glade:252
 msgid "Package Name"
 msgstr "Paket Adı"
 
-#: ui/MainWindow.glade:240
+#: ui/MainWindow.glade:277
 msgid "version"
 msgstr "versiyon"
 
-#: ui/MainWindow.glade:262
+#: ui/MainWindow.glade:299
 msgid "short description"
 msgstr "kısa açıklama"
 
-#: ui/MainWindow.glade:292
+#: ui/MainWindow.glade:329
 msgid "<small><span weight='light'>Installed Version :</span></small>"
 msgstr "<small><span weight='light'>Yüklü Versiyon :</span></small>"
 
-#: ui/MainWindow.glade:307
+#: ui/MainWindow.glade:344
 msgid "<small><span weight='light'>Not installed</span></small>"
 msgstr "<small><span weight='light'>Yüklü değil</span></small>"
 
-#: ui/MainWindow.glade:349 src/MainWindow.py:166 src/MainWindow.py:309
-#: src/MainWindow.py:626 src/MainWindow.py:633
+#: ui/MainWindow.glade:386 src/MainWindow.py:197 src/MainWindow.py:351
+#: src/MainWindow.py:709 src/MainWindow.py:716
 msgid "Install"
 msgstr "Yükle"
 
-#: ui/MainWindow.glade:366 src/MainWindow.py:167 src/MainWindow.py:627
-#: src/MainWindow.py:634
+#: ui/MainWindow.glade:403 src/MainWindow.py:198 src/MainWindow.py:710
+#: src/MainWindow.py:717
 msgid "Uninstall"
 msgstr "Kaldır"
 
-#: ui/MainWindow.glade:383
+#: ui/MainWindow.glade:420
 msgid "Details"
 msgstr "Detaylar"
 
-#: ui/MainWindow.glade:422
+#: ui/MainWindow.glade:459
 msgid "Done"
 msgstr "Kapat"
 
-#: ui/MainWindow.glade:494
+#: ui/MainWindow.glade:531
 msgid "Your system has broken dependencies."
 msgstr "Sisteminizde bozuk bağımlılıklar var."
 
-#: ui/MainWindow.glade:513
+#: ui/MainWindow.glade:550
 msgid ""
 "This application can not continue until this is fixed.\n"
 "To fix it run\n"
@@ -97,161 +101,205 @@ msgstr ""
 "<b>sudo apt install --fix-broken</b>\n"
 "komutunu deneyebilirsiniz."
 
-#: ui/MainWindow.glade:605
+#: ui/MainWindow.glade:623
+msgid "<span size='x-large'><b>Toplu Paket Kurulumu</b></span>"
+msgstr "<span size='x-large'><b>Toplu Paket Kurulumu</b></span>"
+
+#: ui/MainWindow.glade:631
+msgid "0 paket seçildi"
+msgstr "0 paket seçildi"
+
+#: ui/MainWindow.glade:655
+msgid "Tümünü Seç / Bırak"
+msgstr "Tümünü Seç / Bırak"
+
+#: ui/MainWindow.glade:668
+msgid "+ Paket Ekle"
+msgstr "+ Paket Ekle"
+
+#: ui/MainWindow.glade:681
+msgid "Listeyi Temizle"
+msgstr "Listeyi Temizle"
+
+#: ui/MainWindow.glade:698
+msgid "Toplam: 0 MB"
+msgstr "Toplam: 0 MB"
+
+#: ui/MainWindow.glade:769
+msgid "Geri"
+msgstr "Geri"
+
+#: ui/MainWindow.glade:781
+msgid "Seçilenleri Kur"
+msgstr "Seçilenleri Kur"
+
+#: ui/MainWindow.glade:807 src/MainWindow.py:1158
+msgid "Toplu Kurulum"
+msgstr "Toplu Kurulum"
+
+#: ui/MainWindow.glade:883
 msgid "The .deb package is corrupt."
 msgstr ".deb paketi bozuk."
 
-#: ui/MainWindow.glade:734 ui/MainWindow.glade:775 ui/MainWindow.glade:816
-#: ui/MainWindow.glade:859 ui/MainWindow.glade:900 ui/MainWindow.glade:941
+#: ui/MainWindow.glade:1013 ui/MainWindow.glade:1054 ui/MainWindow.glade:1095
+#: ui/MainWindow.glade:1138 ui/MainWindow.glade:1179 ui/MainWindow.glade:1220
 msgid "-"
 msgstr "-"
 
-#: ui/MainWindow.glade:997
+#: ui/MainWindow.glade:1276
 msgid "Dependency List"
 msgstr "Bağımlılık Listesi"
 
-#: ui/MainWindow.glade:1036
+#: ui/MainWindow.glade:1315
 msgid "Packages to install"
 msgstr "Yüklenecek Paketler"
 
-#: ui/MainWindow.glade:1077
+#: ui/MainWindow.glade:1356
 msgid "Dependencies"
 msgstr "Bağımlılıklar"
 
-#: ui/MainWindow.glade:1172 src/MainWindow.py:82
-msgid "Pars Linux Package Installer"
-msgstr "Pars Linux Paket Kurucu"
+#: ui/MainWindow.glade:1380
+msgid "Paket dosyalarında ara..."
+msgstr "Paket dosyalarında ara..."
 
-#: ui/MainWindow.glade:1231
+#: ui/MainWindow.glade:1393
+msgid "0 dosya"
+msgstr "0 dosya"
+
+#: ui/MainWindow.glade:1435
+msgid "İçerilen Dosyalar"
+msgstr "İçerilen Dosyalar"
+
+#: ui/MainWindow.glade:1590
 msgid "Manage and view .deb packages"
 msgstr "Deb paketlerini yönetin ve görüntüleyin"
 
 #. Name Surname <example@examplemail.com>
-#: ui/MainWindow.glade:1235
+#: ui/MainWindow.glade:1594
 msgid "translator-credits"
 msgstr "Pars Linux Geliştiricileri <dev@parslinux.org>"
 
-#: src/MainWindow.py:86
+#: src/MainWindow.py:109
 msgid "About Pars Linux Package Installer"
 msgstr "Pars Linux Paket Kurucu Hakkında"
 
-#: src/MainWindow.py:177
+#: src/MainWindow.py:208
 msgid "Broken package"
 msgstr "Bozuk paket"
 
-#: src/MainWindow.py:262
+#: src/MainWindow.py:293
 msgid "No dependencies"
 msgstr "Bağımlılık yok"
 
-#: src/MainWindow.py:267
+#: src/MainWindow.py:298
 msgid "Unsatisfied Dependencies:"
 msgstr "Karşılanamayan Bağımlılıklar:"
 
-#: src/MainWindow.py:271
+#: src/MainWindow.py:302
 msgid "All dependencies are satisfied"
 msgstr "Tüm bağımlılıklar karşılandı"
 
-#: src/MainWindow.py:274
+#: src/MainWindow.py:305
 msgid "Installed Version :"
 msgstr "Yüklü Versiyon :"
 
-#: src/MainWindow.py:284 src/MainWindow.py:737
+#: src/MainWindow.py:315 src/MainWindow.py:820
 msgid "Not installed"
 msgstr "Yüklü değil"
 
-#: src/MainWindow.py:298
+#: src/MainWindow.py:340
 msgid "Error !"
 msgstr "Hata !"
 
-#: src/MainWindow.py:310
+#: src/MainWindow.py:352
 msgid "Downgrade"
 msgstr "Versiyon Düşür"
 
-#: src/MainWindow.py:311
+#: src/MainWindow.py:353
 msgid "Reinstall"
 msgstr "Tekrar Yükle"
 
-#: src/MainWindow.py:312
+#: src/MainWindow.py:354
 msgid "Upgrade"
 msgstr "Versiyon Yükselt"
 
-#: src/MainWindow.py:478
+#: src/MainWindow.py:546
 msgid " upgraded"
 msgstr " versiyon yükseltildi"
 
-#: src/MainWindow.py:480
+#: src/MainWindow.py:548
 msgid " installed"
 msgstr " yüklendi"
 
-#: src/MainWindow.py:498
+#: src/MainWindow.py:566
 msgid "Package Architecture Error"
 msgstr "Paket Mimarisi Hatası"
 
-#: src/MainWindow.py:498
+#: src/MainWindow.py:566
 msgid "System"
 msgstr "Sistem"
 
-#: src/MainWindow.py:498
+#: src/MainWindow.py:566
 msgid "Package"
 msgstr "Paket"
 
-#: src/MainWindow.py:508
+#: src/MainWindow.py:576
 msgid " uninstalled"
 msgstr " kaldırıldı"
 
-#: src/MainWindow.py:519
+#: src/MainWindow.py:587
 msgid " reinstalled"
 msgstr " tekrar yüklendi"
 
-#: src/MainWindow.py:530
+#: src/MainWindow.py:598
 msgid " downgraded"
 msgstr " versiyon düşürüldü"
 
-#: src/MainWindow.py:543
+#: src/MainWindow.py:611
 msgid "Installing"
 msgstr "Yükleniyor"
 
-#: src/MainWindow.py:547
+#: src/MainWindow.py:615
 msgid "Downgrading"
 msgstr "Versiyon Düşürülüyor"
 
-#: src/MainWindow.py:552
+#: src/MainWindow.py:620
 msgid "Reinstalling"
 msgstr "Tekrar Yükleniyor"
 
-#: src/MainWindow.py:557
+#: src/MainWindow.py:625
 msgid "Upgrading"
 msgstr "Versiyon Yükseltiliyor"
 
-#: src/MainWindow.py:562
+#: src/MainWindow.py:630
 msgid "Uninstalling"
 msgstr "Kaldırılıyor"
 
-#: src/MainWindow.py:602
+#: src/MainWindow.py:685
 msgid "Show Details"
 msgstr "Detayları Göster"
 
-#: src/MainWindow.py:605
+#: src/MainWindow.py:688
 msgid "Hide Details"
 msgstr "Detayları Gizle"
 
-#: src/MainWindow.py:712
+#: src/MainWindow.py:795
 msgid "Not Completed !"
 msgstr "Tamamlanamadı !"
 
-#: src/MainWindow.py:715 src/MainWindow.py:743
+#: src/MainWindow.py:798 src/MainWindow.py:826
 msgid "<b><span color='red'>Connection Error !</span></b>"
 msgstr "<b><span color='red'>Bağlantı Hatası !</span></b>"
 
-#: src/MainWindow.py:717 src/MainWindow.py:745
+#: src/MainWindow.py:800 src/MainWindow.py:828
 msgid "<b><span color='red'>Dpkg Lock Error !</span></b>"
 msgstr "<b><span color='red'>Dpkg Kilitleme Hatası !</span></b>"
 
-#: src/MainWindow.py:719 src/MainWindow.py:747
+#: src/MainWindow.py:802 src/MainWindow.py:830
 msgid "<b><span color='red'>Dpkg Interrupt Error !</span></b>"
 msgstr "<b><span color='red'>Dpkg Kesinti Hatası !</span></b>"
 
-#: src/MainWindow.py:756
+#: src/MainWindow.py:839
 msgid ""
 "Only one software management tool is allowed to run at the same time.\n"
 "Please close the other application\n"
@@ -260,6 +308,75 @@ msgstr ""
 "Aynı anda yalnızca tek bir paket yöneticisi çalışabilir.\n"
 "Lütfen önce diğer uygulamayı,\n"
 "ör. 'Güncelleştirme Yöneticisi', 'aptitude' ya da 'Synaptic'i kapatın."
+
+#: src/MainWindow.py:904
+msgid "Dosya Yolu"
+msgstr ""
+
+#: src/MainWindow.py:918 src/MainWindow.py:992
+msgid "Boyut"
+msgstr ""
+
+#: src/MainWindow.py:970
+msgid "Paket"
+msgstr ""
+
+#: src/MainWindow.py:978
+msgid "Sürüm"
+msgstr ""
+
+#: src/MainWindow.py:985
+msgid "Durum"
+msgstr ""
+
+#: src/MainWindow.py:1074 src/MainWindow.py:1078
+msgid "Kurulabilir"
+msgstr ""
+
+#: src/MainWindow.py:1075
+msgid "Sürüm Düşürülebilir"
+msgstr ""
+
+#: src/MainWindow.py:1076
+msgid "Zaten Kurulu"
+msgstr ""
+
+#: src/MainWindow.py:1077
+msgid "Yükseltilebilir"
+msgstr ""
+
+#: src/MainWindow.py:1085
+msgid "Geçersiz Paket"
+msgstr ""
+
+#: src/MainWindow.py:1114
+msgid "Toplu kurulum başlatılıyor..."
+msgstr ""
+
+#: src/MainWindow.py:1125
+msgid "Kuruluyor..."
+msgstr ""
+
+#: src/MainWindow.py:1143
+#, fuzzy
+msgid "Kuruldu"
+msgstr "Toplu Kurulum"
+
+#: src/MainWindow.py:1146
+msgid "Hata!"
+msgstr ""
+
+#: src/MainWindow.py:1151
+msgid "Tüm işlemler tamamlandı"
+msgstr ""
+
+#: src/MainWindow.py:1152
+msgid "Toplu paket kurulumu başarıyla tamamlandı."
+msgstr ""
+
+#: src/MainWindow.py:1158
+msgid "Tüm paketlerin kurulum işlemi tamamlandı."
+msgstr ""
 
 #~ msgid "© 2021 Pardus"
 #~ msgstr "© 2021 Pardus"

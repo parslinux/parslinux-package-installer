@@ -14,4 +14,18 @@ if os.path.exists(sys_path):
 elif os.path.exists(local_path):
     sys.path.insert(0, local_path)
 
-import Main
+prog_name = os.path.basename(sys.argv[0])
+use_adw = prog_name.endswith('-adw') or '--adw' in sys.argv or '--gtk4' in sys.argv
+
+if '--adw' in sys.argv:
+    sys.argv.remove('--adw')
+if '--gtk4' in sys.argv:
+    sys.argv.remove('--gtk4')
+
+if use_adw:
+    import MainAdw
+    sys.exit(MainAdw.main())
+else:
+    import Main
+    app = Main.Application()
+    sys.exit(app.run(sys.argv))

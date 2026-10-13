@@ -20,36 +20,42 @@ class Application(Gtk.Application):
         GLib.set_prgname("org.parslinux.package-installer")
 
     def do_activate(self):
-        target_file = None
-        if len(sys.argv) > 1:
-            candidate = sys.argv[1]
-            if not candidate.startswith("-") and os.path.exists(candidate) and candidate.lower().endswith(".deb"):
-                target_file = Gio.File.new_for_path(os.path.abspath(candidate))
+        target_files = []
+        for arg in sys.argv[1:]:
+            if not arg.startswith("-") and os.path.exists(arg) and arg.lower().endswith(".deb"):
+                target_files.append(os.path.abspath(arg))
 
         if self.window is not None:
-            if target_file:
-                self.window.from_file(target_file.get_path())
+            if len(target_files) == 1:
+                self.window.from_file(target_files[0])
+            elif len(target_files) > 1:
+                self.window.open_batch(target_files)
             self.window.window.present()
         else:
-            self.window = MainWindow(self, target_file)
+            first_file = Gio.File.new_for_path(target_files[0]) if len(target_files) == 1 else None
+            self.window = MainWindow(self, first_file)
+            if len(target_files) > 1:
+                self.window.open_batch(target_files)
 
     def do_open(self, files, filecount, hint):
-        if filecount >= 1:
-            file = files[0]
-            path = file.get_path()
-            if path and os.path.exists(path):
-                if path.lower().endswith(".deb"):
-                    if self.window is not None:
-                        self.window.from_file(path)
-                        self.window.window.present()
-                    else:
-                        self.window = MainWindow(self, file)
-                else:
-                    print(f"Error: Only .deb files are supported ({path}).")
-            else:
-                print(f"File does not exist: {path}")
+        target_paths = []
+        for f in files:
+            p = f.get_path()
+            if p and os.path.exists(p) and p.lower().endswith(".deb"):
+                target_paths.append(p)
+
+        if self.window is None:
+            first_file = files[0] if len(target_paths) == 1 else None
+            self.window = MainWindow(self, first_file)
+
+        if len(target_paths) == 1:
+            self.window.from_file(target_paths[0])
+            self.window.window.present()
+        elif len(target_paths) > 1:
+            self.window.open_batch(target_paths)
+            self.window.window.present()
         else:
-            print("No files provided.")
+            self.window.window.present()
 
 
 if __name__ == "__main__":

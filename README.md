@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/parslinux-package-installer.svg" width="128" height="128" alt="Pars Linux Package Installer Logo" />
+</p>
+
 # Pars Linux Package Installer
 
 **Pars Linux Package Installer** (`parslinux-package-installer`), Pars Linux ve Debian tabanlı dağıtımlar için tasarlanmış, GDebi dengi modern ve hafif bir grafiksel `.deb` paket yöneticisidir.

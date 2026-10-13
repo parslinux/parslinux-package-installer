@@ -265,10 +265,11 @@ class DebPackage:
         # Fallback lexical comparison
         return (v1 > v2) - (v1 < v2)
 
-    def get_file_list(self):
-        """Get the list of files in the package."""
-        if self.filelist:
-            return self.filelist
+    def get_file_details(self):
+        """Get detailed metadata for all files in the package."""
+        if hasattr(self, "_file_details") and self._file_details:
+            return self._file_details
+        self._file_details = []
         try:
             with open(self.filename, "rb") as f:
                 f.seek(8)
@@ -283,8 +284,37 @@ class DebPackage:
                         f.read(1)
                     if name.startswith("data.tar"):
                         with tarfile.open(fileobj=io.BytesIO(content), mode="r:*") as tar:
-                            self.filelist = sorted([m.name.lstrip(".") for m in tar.getmembers() if m.name not in (".", "./")])
+                            members = tar.getmembers()
+                            details = []
+                            for m in members:
+                                if m.name in (".", "./"):
+                                    continue
+                                cname = m.name.lstrip(".")
+                                if not cname.startswith("/"):
+                                    cname = "/" + cname
+                                is_dir = m.isdir()
+                                is_sym = m.issym()
+                                is_link = m.islnk()
+                                is_exec = bool(m.mode & 0o111) if not is_dir else False
+                                details.append({
+                                    "name": cname,
+                                    "size": m.size if not is_dir else 0,
+                                    "is_dir": is_dir,
+                                    "is_sym": is_sym or is_link,
+                                    "is_exec": is_exec,
+                                    "target": m.linkname if (is_sym or is_link) else "",
+                                    "mode": oct(m.mode)
+                                })
+                            self._file_details = sorted(details, key=lambda x: x["name"])
+                            self.filelist = [d["name"] for d in self._file_details]
                         break
         except Exception as e:
             print(f"Error reading package files: {e}")
+        return self._file_details
+
+    def get_file_list(self):
+        """Get the list of files in the package."""
+        if self.filelist:
+            return self.filelist
+        self.get_file_details()
         return self.filelist

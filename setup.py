@@ -39,17 +39,18 @@ data_files = [
     ("/usr/share/applications", ["org.parslinux.package-installer.desktop"]),
     ("/usr/share/parslinux/parslinux-package-installer/ui", ["ui/MainWindow.glade"]),
     ("/usr/share/parslinux/parslinux-package-installer/src",
-     ["src/Actions.py", "src/Main.py", "src/MainWindow.py", "src/DebPackage.py", "src/__version__"]),
-    ("/usr/bin", ["parslinux-package-installer", "pardus-package-installer"]),
+     ["src/Actions.py", "src/Main.py", "src/MainWindow.py", "src/DebPackage.py", "src/MainAdw.py", "src/MainWindowAdw.py", "src/__version__"]),
+    ("/usr/bin", ["parslinux-package-installer", "parslinux-package-installer-adw", "pardus-package-installer"]),
     ("/usr/share/polkit-1/actions", ["org.parslinux.pkexec.parslinux-package-installer.policy"]),
-    ("/usr/share/icons/hicolor/scalable/apps/", ["images/parslinux-package-installer.svg"])
+    ("/usr/share/parslinux/parslinux-package-installer/images", ["images/parslinux-package-installer.svg"]),
+    ("/usr/share/icons/hicolor/scalable/apps/", ["images/parslinux-package-installer.svg", "images/pardus-package-installer.svg"])
 ] + create_mo_files()
 
 setup(
     name="Pars Linux Package Installer",
     version=version,
     packages=find_packages(),
-    scripts=["parslinux-package-installer"],
+    scripts=["parslinux-package-installer", "parslinux-package-installer-adw"],
     install_requires=["PyGObject"],
     data_files=data_files,
     author="Pars Linux Developers",

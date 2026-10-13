@@ -44,7 +44,23 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 
 ---
 
+## 🎯 Kilometre Taşı 6: Yeni Görsel Kimlik, Logo ve Boş Durum Tasarımı ✅
+- [x] Modern Pars Linux squircle (128x128 SVG) uygulama logosu tasarlandı (`images/parslinux-package-installer.svg`).
+- [x] 3D paket koli (parcel), altın mühür bandı, perspektifli `.deb` rozeti ve parlak indirme/kurulum oku görseli oluşturuldu.
+- [x] GTK Boş Durum (Empty State) ekranı büyük 96px logo, kalın başlık, ikincil açıklama ve modern eylem butonu ile zenginleştirildi.
+- [x] Bozuk paket (`BrokenDebBox`) ekranına görsel uyarı sembolü eklendi.
+- [x] Pencere ikonu, HeaderBar ve Hakkında diyaloğu logo yükleyicisi otomatik SVG çözümlemesi ile güçlendirildi.
+- [x] Telif hakları ve alt bilgi metinleri `© Pars Linux` olarak tamamlandı.
+
+---
+
+## 🎯 Kilometre Taşı 7: İleri Düzey Yetenekler ve GTK 4 / Libadwaita ✅
+- [x] Toplu paket kurulumu (Birden fazla `.deb` dosyasını aynı anda seçip kurabilme).
+- [x] Paket içerilen dosya ağacında (`Included Files`) canlı arama ve filtreleme.
+- [x] Deneysel GTK 4 & Libadwaita arayüz motoru (`src/MainAdw.py`, `src/MainWindowAdw.py`).
+
+---
+
 ## 🚀 Gelecek Planları (Roadmap)
-- [ ] Toplu paket kurulumu (Birden fazla `.deb` dosyasını aynı anda kurabilme).
-- [ ] GTK 4 ve Libadwaita arayüz geçişi.
-- [ ] Paket dosya ağacı (Included Files listesi) için görsel arama ve filtreleme.
+- [ ] APT / Flathub entegrasyonu ile çevrimiçi paket karşılaştırma.
+- [ ] Wayland üzerinde gelişmiş pencere animasyonları.
