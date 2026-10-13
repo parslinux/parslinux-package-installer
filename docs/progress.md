@@ -82,11 +82,18 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 
 ---
 
-## 🎯 Kilometre Taşı 10: Otomatik Test Paketi ve Doğrulama ✅
-- [x] `tests/test_included_files.py`: Paket içi dosya ayrıştırma, boyut ve izin denetimleri.
-- [x] `tests/test_batch_queue.py`: Çoklu paket ayrıştırma ve kuyruk yönetimi.
-- [x] `tests/test_gui_integration.py`: GTK 3 `MainWindow` ve GTK 4 `MainWindowAdw` pencere testleri.
-- [x] `tests/run_all_tests.py`: Tüm testleri izole süreçlerde otomatik çalıştıran ana test koşucusu.
+---
+
+## 🎯 Kilometre Taşı 11: Tam Modernizasyon, Güvenlik ve CLI Teftiş Modu ✅
+- [x] **Kaldırma UX Güvenliği (Confirmation Dialog)**: Tek tıkla kazara paket/bağımlılık silinmesini önleyen `Gtk.MessageDialog` ve `Adw.MessageDialog` onay pencereleri entegre edildi.
+- [x] **Modern CSS Tema Motoru (`ui/style.css`)**: `Gtk.CssProvider` ile modern eylem butonları (`.suggested-action`, `.destructive-action`, `.pill`), koyu monospace APT terminal çıktısı ve durum rozetleri bağlandı.
+- [x] **Headless CLI Teftiş Modülü (`src/cli.py`)**:
+  - `-i, --info <paket.deb>`: GUI açmadan terminalde paket detaylarını, mimarisini, boyutunu ve durumunu listeleme.
+  - `-c, --check <paket.deb>`: Bağımlılıkları denetleyip eksik paketleri raporlama ve otomasyonlar için çıkış kodu (0 veya 1) üretme.
+  - Her iki grafik arayüz (`Main.py` ve `MainAdw.py`) CLI komutlarını bağımsız çalıştırabilir hale getirildi.
+- [x] **Evrensel Dil-Bağımsız Hata Yakalama**: APT ve dpkg hata akışları yerel dilden bağımsız hale getirildi.
+- [x] **Kaynak ve Dosya Kaçaklarının Giderilmesi**: `__version__` ve arayüz dosyalarındaki tüm unclosed file uyarıları context manager ile temizlendi.
+- [x] **Genişletilmiş Test Paketi**: `tests/test_cli_modernization.py` ile 11 adet otomatik test paketi %100 oranla geçmektedir.
 
 ---
 

@@ -537,7 +537,24 @@ class MainWindowAdw(Adw.ApplicationWindow):
         self.run_single_action("install")
 
     def on_remove_clicked(self, button):
-        self.run_single_action("remove")
+        pkg_name = self.package.pkgname if self.package else ""
+        dialog = Adw.MessageDialog(
+            transient_for=self,
+            heading="Paketi Kaldır?",
+            body=f"'{pkg_name}' paketini sistemden kaldırmak istediğinizden emin misiniz?\nBu işlem pakete bağımlı diğer bileşenleri de kaldırabilir.",
+        )
+        dialog.add_response("cancel", "İptal")
+        dialog.add_response("remove", "Kaldır")
+        dialog.set_response_appearance("remove", Adw.ResponseAppearance.DESTRUCTIVE)
+        dialog.set_default_response("cancel")
+        dialog.set_close_response("cancel")
+
+        def on_response(dlg, response_id):
+            if response_id == "remove":
+                self.run_single_action("remove")
+
+        dialog.connect("response", on_response)
+        dialog.present()
 
     def run_single_action(self, action_type):
         if not self.debianpackage:

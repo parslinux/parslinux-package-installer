@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.parslinux.package-installer</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Pars Linux Package Installer</name>
+  <name xml:lang="tr">Pars Linux Paket Kurucu</name>
+  <name xml:lang="pt">Instalador de Pacotes Pars Linux</name>
+  
+  <summary>A modern graphical installer for Debian (.deb) packages</summary>
+  <summary xml:lang="tr">Debian (.deb) paketleri için modern grafiksel paket kurucu</summary>
+  <summary xml:lang="pt">Instalador gráfico moderno para pacotes Debian (.deb)</summary>
+  
+  <description>
+    <p>
+      Pars Linux Package Installer is an intuitive, security-first package manager for handling local Debian (.deb) binary archives.
+      It automatically inspects package metadata, checks system dependencies, and allows single-click installation, reinstallation, upgrade, or removal.
+    </p>
+    <p xml:lang="tr">
+      Pars Linux Paket Kurucu, yerel Debian (.deb) paketlerini incelemek, kurmak ve yönetmek için geliştirilmiş kullanıcı dostu bir araçtır.
+      Paket bağımlılıklarını otomatik kontrol eder; tek tıkla kurma, sürüm yükseltme/düşürme ve kaldırma imkanı sunar.
+    </p>
+    <ul>
+      <li>Fast dependency resolution via python3-apt with pure Python fallback</li>
+      <li>Batch installation queue for installing multiple packages at once</li>
+      <li>Interactive file browser for inspecting included archive files with live search</li>
+      <li>Dual modern interface: GTK 3 and native GTK 4 / Libadwaita editions</li>
+    </ul>
+  </description>
+  
+  <launchable type="desktop-id">org.parslinux.package-installer.desktop</launchable>
+  <url type="homepage">https://parslinux.org</url>
+  <url type="bugtracker">https://github.com/parslinux/parslinux-package-installer/issues</url>
+  
+  <provides>
+    <binary>parslinux-package-installer</binary>
+    <binary>parslinux-package-installer-adw</binary>
+  </provides>
+  
+  <releases>
+    <release version="1.0.0" date="2026-10-14">
+      <description>
+        <p>First official release under Pars Linux with Batch Installer, Included Files live search, and GTK 4 / Libadwaita frontend.</p>
+      </description>
+    </release>
+  </releases>
+  
+  <content_rating type="oars-1.1" />
+</component>

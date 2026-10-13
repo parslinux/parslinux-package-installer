@@ -57,6 +57,39 @@ class ApplicationAdw(Adw.Application):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(
+        prog="parslinux-package-installer-adw",
+        description="Pars Linux Deb Package Installer (GTK 4 / Libadwaita Interface)"
+    )
+    parser.add_argument("files", nargs="*", help="Debian package files (.deb) to inspect or install")
+    parser.add_argument("-i", "--info", metavar="DEB_FILE", help="Display package metadata in terminal without GUI")
+    parser.add_argument("-c", "--check", metavar="DEB_FILE", help="Verify package dependencies in terminal (exit 0: ok, 1: missing)")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose debug logging")
+    parser.add_argument("--version", action="store_true", help="Show program version and exit")
+
+    args, unknown = parser.parse_known_args()
+
+    if args.version:
+        ver = "1.0.0"
+        ver_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "__version__")
+        if os.path.exists(ver_file):
+            try:
+                with open(ver_file, "r", encoding="utf-8") as f:
+                    ver = f.readline().strip()
+            except Exception:
+                pass
+        print(f"Pars Linux Package Installer (Adw) v{ver}")
+        return 0
+
+    if args.info:
+        from cli import cli_info
+        return cli_info(args.info)
+
+    if args.check:
+        from cli import cli_check
+        return cli_check(args.check)
+
     app = ApplicationAdw()
     return app.run(sys.argv)
 
