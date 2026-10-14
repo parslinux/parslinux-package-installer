@@ -15,6 +15,7 @@ from typing import Optional
 from DebPackage import DebPackage
 from PackageLoader import open_package, is_supported_package
 from SnapshotManager import SnapshotManager
+from FlatpakHelper import FlatpakHelper
 
 
 def is_remote_url(target: str) -> bool:
@@ -111,6 +112,10 @@ def cli_info(deb_path: str) -> int:
     print(f" Bağımlılıklar    : {pkg.get('Depends', '(Yok)')}")
     snapshot_backend = SnapshotManager.get_backend_name() if SnapshotManager.is_available() else "Mevcut Değil"
     print(f" Sistem Güvencesi : {snapshot_backend}")
+    if FlatpakHelper.is_available():
+        alt = FlatpakHelper.find_alternative(pkg.pkgname)
+        if alt:
+            print(f" Flathub Muadili  : {alt['name']} ({alt['app_id']})")
     desc = pkg.get("Description", "").strip()
     if desc:
         print("-" * 60)
@@ -158,7 +163,33 @@ def cli_check(deb_path: str) -> int:
             print(f"  Eksik Paketler: {', '.join(pkg.missing_deps)}", file=sys.stderr)
         if pkg._failure_string:
             print(f"  Hata Detayı: {pkg._failure_string}", file=sys.stderr)
+
+        # Smart Alternative / Flathub Recommendation
+        if FlatpakHelper.is_available():
+            alt = FlatpakHelper.find_alternative(pkg.pkgname)
+            if alt:
+                print("-" * 60, file=sys.stderr)
+                print(f"💡 Flathub Alternatifi Mevcut:", file=sys.stderr)
+                print(f"   Uygulama: {alt['name']} (v{alt.get('version', '-')})", file=sys.stderr)
+                print(f"   Kimlik  : {alt['app_id']}", file=sys.stderr)
+                print(f"   Kurulum : {alt['install_cmd']}", file=sys.stderr)
+                print("-" * 60, file=sys.stderr)
         return 1
+
+
+def cli_flatpak_search(query: str) -> int:
+    """Search Flathub applications directly from CLI."""
+    results = FlatpakHelper.search_flatpak(query)
+    if not results:
+        print(f"Flathub üzerinde '{query}' için uygulama bulunamadı.")
+        return 1
+    print(f"Flathub Arama Sonuçları ('{query}'):")
+    print("-" * 60)
+    for r in results[:5]:
+        print(f" • {r['name']} ({r['app_id']}) v{r.get('version', '-')}")
+        print(f"   {r['install_cmd']}")
+    print("-" * 60)
+    return 0
 
 
 def cli_snapshot_status() -> int:

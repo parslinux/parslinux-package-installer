@@ -41,7 +41,8 @@ class TestArchPackageSupport(unittest.TestCase):
 
         self.assertTrue(is_supported_package("sample.pkg.tar.zst"))
         self.assertTrue(is_supported_package("sample.deb"))
-        self.assertFalse(is_supported_package("sample.rpm"))
+        self.assertTrue(is_supported_package("sample.rpm"))
+        self.assertFalse(is_supported_package("sample.exe"))
         self.assertFalse(is_supported_package("sample.txt"))
 
     def test_polymorphic_package_loader(self):

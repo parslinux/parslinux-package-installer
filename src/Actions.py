@@ -122,6 +122,27 @@ def install(targets: Union[str, List[str]], create_snapshot: bool = False) -> in
 
     # Arch Linux native package installation
     any_arch_pkg = any(is_arch_package(p) for p in pkg_paths)
+    any_rpm_pkg = any(p.endswith(".rpm") for p in pkg_paths)
+
+    # Native RPM environment
+    if any_rpm_pkg and shutil.which("rpm") and not shutil.which("dpkg") and not shutil.which("pacman"):
+        rpm_bin = shutil.which("rpm")
+        cmd = [rpm_bin, "-Uvh", "--replacepkgs", *pkg_paths]
+        res = subprocess.run(cmd, check=False)
+        return res.returncode
+
+    # RPM on Debian or Arch via alien
+    if any_rpm_pkg:
+        alien_bin = shutil.which("alien")
+        if alien_bin:
+            logger.info("Converting RPM via alien...")
+            cmd = [alien_bin, "-i", *pkg_paths]
+            res = subprocess.run(cmd, check=False)
+            return res.returncode
+        else:
+            logger.error("RPM package installation requires 'rpm' on Red Hat/Fedora or 'alien' on Debian/Arch.")
+            return 1
+
     if is_arch_environment() or any_arch_pkg:
         pacman_bin = shutil.which("pacman") or "/usr/bin/pacman"
         arch_targets = []

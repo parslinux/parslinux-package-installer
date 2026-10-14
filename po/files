@@ -3,6 +3,8 @@ src/MainAdw.py
 src/Main.py
 src/DebPackage.py
 src/ArchPackage.py
+src/RpmPackage.py
+src/FlatpakHelper.py
 src/PackageLoader.py
 src/SnapshotManager.py
 src/NotificationManager.py

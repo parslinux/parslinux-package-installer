@@ -167,8 +167,25 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
   - `-i` ve `-c` teftiş çıktılarında sistem güvencesi durumunun raporlanması.
 - [x] **Kapsamlı Test Kapsamı**:
   - `tests/test_snapshot_and_notifications.py` (16 birim testi eklendi).
-  - Projedeki toplam test sayısı **6 test paketi** ve **40 teste** ulaştı (%100 başarıyla geçiyor).
-- [x] **Yeni Kod Oranı:** Çekirdek Python kodlarının **%97.9'u** doğrudan Pars Linux ekibi tarafından yazılmış hale geldi!
+  - Projedeki toplam test sayısı **7 test paketi** ve **54 test senaryosuna** ulaştı (%100 başarıyla geçiyor).
+- [x] **Yeni Kod Oranı:** Çekirdek Python kodlarının **%98.2'si** doğrudan Pars Linux ekibi tarafından yazılmış hale geldi!
+
+---
+
+## 🎯 Kilometre Taşı 15: Flathub Akıllı Alternatif Önerisi & Evrensel RPM Desteği (v2.2.0) ✅
+- [x] **Flathub Akıllı Alternatif Motoru (`src/FlatpakHelper.py`)**:
+  - Depolarda bulunmayan veya kurulumunda bağımlılık sorunu çıkan paketler için Flathub üzerinde otomatik alternatif arama (`flatpak search`).
+  - `MainWindowAdw.py` Libadwaita arayüzünde otomatik uyarı banner'ı (`banner_flatpak`) ve tek tıkla doğrudan "Flathub Üzerinden Kur" eylemi.
+  - CLI arayüzüne `--flatpak-search <terim>` parametresi ve `cli_check()` / `cli_info()` çıktılarında akıllı Flathub alternatif önerisi.
+- [x] **Saf Python RPM (.rpm) Paket Motoru (`src/RpmPackage.py`)**:
+  - `rpm` ikili programı veya C/Python binding'i gerektirmeyen, ikili RPM başlıklarını (`Lead` ve `Header` formatı) doğrudan `struct` ile okuyan bağımsız ayrıştırıcı.
+  - Paket adı, sürüm, mimari, özet, açıklama, lisans, boyut ve paket içi tam dosya ağacı (`OLDFILENAMES` ve `BASENAMES/DIRNAMES`) dökümü.
+  - `PackageLoader.py` polimorfik motoruna `.rpm` uzantısı tam entegrasyonu.
+  - RPM tabanlı dağıtımlarda `rpm -Uvh`, Debian/Arch ortamlarında `alien` uyumluluk köprüsü.
+- [x] **Kapsamlı Test ve GUI Entegrasyonu**:
+  - `tests/fixtures/parslinux-fedora-hello-2.2.0-1.x86_64.rpm` gerçek test paketi.
+  - `tests/test_rpm_and_flatpak.py` (13 yeni test) ve Libadwaita RPM pencere entegrasyon testi.
+  - Toplam 7 test paketinde 54 test senaryosu %100 başarıyla geçmektedir.
 
 ---
 
@@ -189,6 +206,11 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 - [x] **🔔 Masaüstü Bildirimleri:** `Gio.Notification` ve `notify-send` ile arka plan işlem bildirimleri.
 - [x] **🩺 CLI Snapshot Teftişi:** `--snapshot-status` parametresi.
 
-### v2.2.0 (Gelecek Hedefleri)
-- [ ] **💡 Akıllı Alternatif / Flatpak Önerisi:** Depolarda olmayan paketler için Flathub entegrasyonu.
-- [ ] **📦 RPM (.rpm) Ailesi Desteği (Test Edilecektir):** Fedora / openSUSE paketlerinin doğrudan incelenebilmesi ve deneysel desteği.
+### v2.2.0 (Tamamlanan Özellikler ✅)
+- [x] **💡 Akıllı Alternatif / Flatpak Önerisi:** Depolarda olmayan paketler için Flathub entegrasyonu, arayüz içi kurulum banner'ı ve CLI alternatif önerisi.
+- [x] **📦 RPM (.rpm) Ailesi Desteği (Test Edilmiştir):** Fedora / openSUSE / RHEL paketlerinin harici bağımlılık olmadan incelenmesi, dosya ağacı dökümü ve sistem kurulum köprüsü.
+
+### v3.0.0 (Gelecek Hedefleri)
+- [ ] **📦 AppImage Taşınabilir Paket Entegrasyonu:** AppImage paketlerinin doğrudan sistem menüsüne entegrasyonu ve güncellenmesi.
+- [ ] **🌐 Flathub Doğrudan Flatpakref İndirme ve Yönetimi:** `.flatpakref` ve `.flatpakrepo` tek tıkla kurulum işleyicisi.
+

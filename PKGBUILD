@@ -1,8 +1,8 @@
 # Maintainer: Pars Linux Developers <dev@parslinux.org>
 pkgname=parslinux-package-installer
-pkgver=1.0.0
+pkgver=2.2.0
 pkgrel=1
-pkgdesc="Pars Linux Package Installer for Debian (.deb) and Arch Linux (.pkg.tar.*) packages"
+pkgdesc="Pars Linux Package Installer for Debian (.deb), Arch Linux (.pkg.tar.*), and RPM (.rpm) packages"
 arch=('any')
 url="https://parslinux.org"
 license=('GPL-3.0-or-later')

@@ -1,3 +1,13 @@
+parslinux-package-installer (2.2.0) unstable; urgency=medium
+
+  * Flathub smart alternative recommendations and in-app installation banner
+  * Universal RPM (.rpm) package format inspection and installation engine
+  * Pure Python binary RPM lead and header metadata parsing without external C tools
+  * Cross-distro package loading for Debian (.deb), Arch (.pkg.tar.*), and RPM (.rpm)
+  * System snapshot safety (Timeshift, Snapper, Btrfs) and desktop notifications
+
+ -- Pars Linux Developers <dev@parslinux.org>  Wed, 14 Oct 2026 03:00:00 +0300
+
 parslinux-package-installer (1.0.0) unstable; urgency=medium
 
   * Pars Linux Package Installer (parslinux-package-installer)

@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 from ArchPackage import ArchPackage, is_arch_package
 from DebPackage import DebPackage
+from RpmPackage import RpmPackage
 
 
 def is_arch_system() -> bool:
@@ -29,15 +30,17 @@ def is_arch_system() -> bool:
 
 
 def is_supported_package(filepath: str) -> bool:
-    """Check whether the given path is a supported package format (.deb or .pkg.tar.*)."""
+    """Check whether the given path is a supported package format (.deb, .pkg.tar.*, or .rpm)."""
     if not isinstance(filepath, str):
         return False
     lower = filepath.lower()
-    return lower.endswith(".deb") or is_arch_package(lower)
+    return lower.endswith(".deb") or lower.endswith(".rpm") or is_arch_package(lower)
 
 
 def open_package(filepath: str, cache: Any = None) -> Any:
-    """Polymorphic factory function returning either DebPackage or ArchPackage."""
+    """Polymorphic factory function returning DebPackage, ArchPackage, or RpmPackage."""
     if is_arch_package(filepath):
         return ArchPackage(filepath, cache=cache)
+    elif filepath.lower().endswith(".rpm"):
+        return RpmPackage(filepath)
     return DebPackage(filepath, cache=cache)

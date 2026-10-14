@@ -4,6 +4,25 @@ Tüm önemli sürüm değişiklikleri bu dosyada belgelenmektedir. Format [Keep 
 
 ---
 
+## [2.2.0] - 2026-10-14
+
+### Eklendi
+- **Flathub Akıllı Alternatif Motoru (`src/FlatpakHelper.py`)**:
+  - Depolarda bulunmayan veya bağımlılıkları karşılanamayan paketler için Flathub üzerinden otomatik alternatif arama (`flatpak search`).
+  - `MainWindowAdw.py` Libadwaita arayüzünde dinamik uyarı banner'ı (`banner_flatpak`) ve tek tıkla doğrudan "Flathub Üzerinden Kur" eylemi.
+  - CLI arayüzüne `--flatpak-search <terim>` parametresi eklendi; `cli_check()` ve `cli_info()` çıktılarında akıllı Flathub alternatif önerileri listelendi.
+- **Evrensel RPM (.rpm) Ailesi Desteği (`src/RpmPackage.py`)**:
+  - `rpm-python` C kütüphanesi veya `rpm` ikili aracı gerektirmeyen, ikili RPM başlıklarını (`Lead` ve `Header` formatı) doğrudan `struct` ile ayrıştıran bağımsız saf Python motoru.
+  - RPM paket adı, sürüm-release, mimari, özet, açıklama, lisans, kurulu boyut ve paket içi tam dosya ağacı (`OLDFILENAMES` ve `BASENAMES/DIRNAMES`) dökümü.
+  - `PackageLoader.py` polimorfik motoruna `.rpm` uzantısı tam entegre edildi.
+  - RPM tabanlı dağıtımlarda `rpm -Uvh`, Debian/Arch ortamlarında `alien` uyumluluk köprüsü.
+- **Kapsamlı Test ve GUI Entegrasyonu**:
+  - `tests/fixtures/parslinux-fedora-hello-2.2.0-1.x86_64.rpm` gerçek test paketi.
+  - `tests/test_rpm_and_flatpak.py` (13 yeni test) ve Libadwaita RPM pencere entegrasyon testi.
+  - Toplam 7 test paketinde 54 test senaryosu %100 başarıyla geçmektedir.
+
+---
+
 ## [2.1.0] - 2026-10-14
 
 ### Eklendi

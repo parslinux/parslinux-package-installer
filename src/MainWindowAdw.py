@@ -17,6 +17,7 @@ from gi.repository import Gtk, Gdk, Adw, Gio, GLib, GObject
 from DebPackage import DebPackage, HAVE_APT
 from PackageLoader import open_package, is_supported_package
 from SnapshotManager import SnapshotManager
+from FlatpakHelper import FlatpakHelper
 import NotificationManager
 from cli import get_version
 
@@ -142,6 +143,13 @@ class MainWindowAdw(Adw.ApplicationWindow):
         self.banner_status = Adw.Banner(title="Bu paket kurulabilir")
         self.banner_status.set_revealed(True)
         main_box.append(self.banner_status)
+
+        # Flathub Alternative Banner
+        self.banner_flatpak = Adw.Banner(title="Bu uygulamanın Flathub sürümü mevcut")
+        self.banner_flatpak.set_button_label("Flatpak ile Kur")
+        self.banner_flatpak.connect("button-clicked", self.on_flatpak_install_clicked)
+        self.banner_flatpak.set_revealed(False)
+        main_box.append(self.banner_flatpak)
 
         # Action Buttons
         btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.START)
@@ -318,12 +326,13 @@ class MainWindowAdw(Adw.ApplicationWindow):
         filters = Gio.ListStore.new(Gtk.FileFilter)
 
         f_all = Gtk.FileFilter()
-        f_all.set_name("Tüm Paketler (*.deb, *.pkg.tar.*)")
+        f_all.set_name("Tüm Paketler (*.deb, *.pkg.tar.*, *.rpm)")
         f_all.add_pattern("*.deb")
         f_all.add_pattern("*.pkg.tar.zst")
         f_all.add_pattern("*.pkg.tar.xz")
         f_all.add_pattern("*.pkg.tar.gz")
         f_all.add_pattern("*.pkg.tar")
+        f_all.add_pattern("*.rpm")
         filters.append(f_all)
 
         f_deb = Gtk.FileFilter()
@@ -333,11 +342,17 @@ class MainWindowAdw(Adw.ApplicationWindow):
         filters.append(f_deb)
 
         f_arch = Gtk.FileFilter()
-        f_arch.set_name("Arch Linux Paketleri (*.pkg.tar.zst)")
+        f_arch.set_name("Arch Linux Paketleri (*.pkg.tar.*)")
         f_arch.add_pattern("*.pkg.tar.zst")
         f_arch.add_pattern("*.pkg.tar.xz")
         f_arch.add_pattern("*.pkg.tar")
         filters.append(f_arch)
+
+        f_rpm = Gtk.FileFilter()
+        f_rpm.set_name("Red Hat / RPM Paketleri (*.rpm)")
+        f_rpm.add_pattern("*.rpm")
+        f_rpm.add_mime_type("application/x-rpm")
+        filters.append(f_rpm)
 
         dialog.set_filters(filters)
         dialog.open_multiple(self, None, self.on_files_selected)
@@ -424,6 +439,37 @@ class MainWindowAdw(Adw.ApplicationWindow):
 
         self.stack.set_visible_child_name("package")
         self.window_title.set_subtitle(f"{pkgname} v{version}")
+
+        # Check Flathub alternative asynchronously
+        self.current_flatpak_alt = None
+        self.banner_flatpak.set_revealed(False)
+        if FlatpakHelper.is_available():
+            def check_flatpak():
+                alt = FlatpakHelper.find_alternative(pkgname)
+                if alt:
+                    def show_flatpak():
+                        self.current_flatpak_alt = alt
+                        self.banner_flatpak.set_title(f"💡 Flathub Alternatifi Mevcut: {alt['name']} ({alt['app_id']})")
+                        self.banner_flatpak.set_revealed(True)
+                    GLib.idle_add(show_flatpak)
+            threading.Thread(target=check_flatpak, daemon=True).start()
+
+    def on_flatpak_install_clicked(self, banner):
+        if not hasattr(self, "current_flatpak_alt") or not self.current_flatpak_alt:
+            return
+        alt = self.current_flatpak_alt
+        self.show_toast(f"'{alt['name']}' Flathub üzerinden kuruluyor...")
+
+        def worker():
+            ok, msg = FlatpakHelper.install_flatpak(alt['app_id'])
+            def done():
+                if ok:
+                    self.show_toast(f"'{alt['name']}' Flatpak başarıyla kuruldu!")
+                    NotificationManager.notify_install_success(alt['name'], alt.get('version', ''), app=self.get_application())
+                else:
+                    self.show_toast("Flatpak kurulumu tamamlanamadı.")
+            GLib.idle_add(done)
+        threading.Thread(target=worker, daemon=True).start()
 
     def populate_files(self):
         # Clear existing listbox

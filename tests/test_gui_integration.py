@@ -67,6 +67,29 @@ class TestGuiIntegrations(unittest.TestCase):
         res = subprocess.run([sys.executable, "-c", sub_code], capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"Main.py entrypoint check failed: {res.stderr}")
 
+    def test_gtk4_adw_rpm_package(self):
+        """Verify opening RPM package (.rpm) in Libadwaita window."""
+        sub_code = (
+            "import sys, os, gi\n"
+            "sys.path.insert(0, os.path.abspath('src'))\n"
+            "gi.require_version('Gtk', '4.0')\n"
+            "gi.require_version('Adw', '1')\n"
+            "from gi.repository import Adw\n"
+            "from MainWindowAdw import MainWindowAdw\n"
+            "app = Adw.Application(application_id='org.parslinux.test.adw_rpm')\n"
+            "fixture = os.path.abspath('tests/fixtures/parslinux-fedora-hello-2.2.0-1.x86_64.rpm')\n"
+            "def on_act(app):\n"
+            "    win = MainWindowAdw(app, fixture)\n"
+            "    assert win.lbl_pkgname.get_label() == 'parslinux-fedora-hello'\n"
+            "    assert win.package.get('Version') == '2.2.0-1'\n"
+            "    assert len(win.file_items) == 3\n"
+            "    app.quit()\n"
+            "app.connect('activate', on_act)\n"
+            "app.run([])\n"
+        )
+        res = subprocess.run([sys.executable, "-c", sub_code], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"GTK4 RPM package test failed: {res.stderr}")
+
 
 if __name__ == '__main__':
     unittest.main()
