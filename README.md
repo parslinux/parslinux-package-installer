@@ -32,6 +32,17 @@
   - Yetki gerektiren tüm işlemler PolicyKit (`pkexec`) ile yönetilir.
   - Kazara paket silinmesini önleyen onay pencereleri (`MessageDialog`).
 
+## 📸 Ekran Görüntüleri
+
+<p align="center">
+  <img src="screenshots/parslinux-package-installer-1.png" width="48%" alt="Tekli Paket İnceleme" />
+  <img src="screenshots/parslinux-package-installer-2.png" width="48%" alt="Arch Linux Paketi" />
+</p>
+<p align="center">
+  <img src="screenshots/parslinux-package-installer-3.png" width="48%" alt="İçerilen Dosyalar Arama" />
+  <img src="screenshots/parslinux-package-installer-4.png" width="48%" alt="Toplu Kurulum Kuyruğu" />
+</p>
+
 ---
 
 ## 📦 Sistem Gereksinimleri

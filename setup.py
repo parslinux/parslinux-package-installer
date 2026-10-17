@@ -45,7 +45,7 @@ data_files = [
     ("/usr/bin", ["parslinux-package-installer", "parslinux-package-installer-adw", "pardus-package-installer"]),
     ("/usr/share/polkit-1/actions", ["org.parslinux.pkexec.parslinux-package-installer.policy"]),
     ("/usr/share/parslinux/parslinux-package-installer/images", ["images/parslinux-package-installer.svg"]),
-    ("/usr/share/icons/hicolor/scalable/apps/", ["images/parslinux-package-installer.svg", "images/pardus-package-installer.svg"])
+    ("/usr/share/icons/hicolor/scalable/apps/", ["images/parslinux-package-installer.svg"])
 ] + create_mo_files()
 
 setup(
