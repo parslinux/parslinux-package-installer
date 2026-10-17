@@ -1,6 +1,6 @@
 pkgbase = parslinux-package-installer
 	pkgdesc = Pars Linux Package Installer for Debian (.deb), Arch Linux (.pkg.tar.*), and RPM (.rpm) packages
-	pkgver = 2.2.0
+	pkgver = 3.0.0
 	pkgrel = 1
 	url = https://parslinux.org
 	arch = any

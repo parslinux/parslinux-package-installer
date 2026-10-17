@@ -27,6 +27,8 @@ Pars Linux projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Aç
    ```
 3. Değişikliklerinizi yapın ve yerel testleri çalıştırın:
    ```bash
+   ./run.sh --test
+   # veya:
    python3 tests/run_all_tests.py
    ```
 4. Git commit mesajlarınızı Conventional Commits standardına uygun yazın:

@@ -6,7 +6,7 @@ Bu doküman, `parslinux-package-installer` üzerinde yürütülen test türlerin
 
 ## 1. Test Mimarisi ve Paketleri
 
-Projede süreç izolasyonu (process isolation) ile çalışan 5 ana test modülü bulunur:
+Projede süreç izolasyonu (process isolation) ile çalışan ana test modülleri bulunur:
 
 1. **`tests/test_included_files.py`**:
    - `DebPackage.get_file_details()` metodunun dosya türlerini (dizin, çalıştırılabilir, sembolik bağ) ve dosya izinlerini doğru ayrıştırdığını doğrular.
@@ -16,8 +16,12 @@ Projede süreç izolasyonu (process isolation) ile çalışan 5 ana test modül�
    - Headless CLI `-i` (`cli_info`) ve `-c` (`cli_check`) komutlarını, AppStream XML metaverisini ve CSS kurallarını test eder.
 4. **`tests/test_arch_package.py`**:
    - Arch Linux `.pkg.tar.zst` paketlerinin `.PKGINFO` metaverilerini, `zstd` dosya ağacını, mimari kontrolünü ve pacman komut inşasını doğrular.
-5. **`tests/test_gui_integration.py`**:
-   - Saf GTK 4 / Libadwaita penceresinin (`MainWindowAdw`) Debian ve Arch paketlerini sorunsuz yüklediğini ve `Main.py` giriş noktasının çalıştığını doğrular.
+5. **`tests/test_appimage_and_flatpakref.py`**:
+   - ELF AppImage ikililerini, masaüstü kısayol üretimini (`.desktop`), `.flatpakref` ve `.flatpakrepo` referanslarını test eder.
+6. **`tests/test_rpm_package.py`**:
+   - `.rpm` paket metaverilerini ve RPM backend komutlarını doğrular.
+7. **`tests/test_gui_integration.py`**:
+   - Saf GTK 4 / Libadwaita penceresinin (`MainWindowAdw`) Debian, Arch, AppImage ve Flatpak paketlerini sorunsuz yüklediğini ve `Main.py` giriş noktasının çalıştığını doğrular.
 
 ---
 
@@ -26,6 +30,8 @@ Projede süreç izolasyonu (process isolation) ile çalışan 5 ana test modül�
 Tüm test paketlerini tek bir komutla çalıştırmak için:
 
 ```bash
+./run.sh --test
+# veya doğrudan:
 python3 tests/run_all_tests.py
 ```
 

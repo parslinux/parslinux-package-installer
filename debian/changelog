@@ -1,3 +1,13 @@
+parslinux-package-installer (3.0.0) unstable; urgency=medium
+
+  * AppImage portable package inspection, execution, and desktop menu integration
+  * Flathub Flatpakref (.flatpakref) and Flatpakrepo (.flatpakrepo) installation support
+  * Standalone portable automation scripts (run.sh, stop.sh, install.sh, uninstall.sh, package.sh, manage.sh)
+  * High-resolution native GTK 4 & Libadwaita screenshots and updated visual assets
+  * Zero remaining legacy Pardus imagery and clean multi-distro packaging
+
+ -- Pars Linux Developers <dev@parslinux.org>  Sat, 17 Oct 2026 13:00:00 +0300
+
 parslinux-package-installer (2.2.0) unstable; urgency=medium
 
   * Flathub smart alternative recommendations and in-app installation banner

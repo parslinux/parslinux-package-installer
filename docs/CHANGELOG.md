@@ -4,6 +4,35 @@ Tüm önemli sürüm değişiklikleri bu dosyada belgelenmektedir. Format [Keep 
 
 ---
 
+## [3.0.0] - 2026-10-17
+
+### Eklendi
+- **AppImage Taşınabilir Paket Desteği (`src/AppImagePackage.py`)**:
+  - `.AppImage` paketlerini ELF ikili başlığından doğrudan tanıma (x86_64, aarch64, i386) ve dosya adı sürüm analizi.
+  - Otomatik `chmod +x` çalıştırma izni tanımlama.
+  - Tek tıkla yerel masaüstü menüsüne entegrasyon (`~/.local/share/applications/appimage-<pkg>.desktop`).
+  - Doğrudan arayüzden tek tıkla "Başlat" ve "Menüden Kaldır" eylemleri.
+- **Flathub Flatpakref & Flatpakrepo Desteği (`src/FlatpakRefPackage.py`)**:
+  - `.flatpakref` ve `.flatpakrepo` dosyalarını açıp metaverilerini (`Name`, `Title`, `Branch`, `Description`, `Url`) ayrıştırma.
+  - `flatpak info` ve `flatpak remotes` üzerinden dinamik kurulum durumu sorgulama.
+  - Tek tıkla "Flathub'dan Kur", "Depoyu Ekle" ve "Kaldır" eylemleri.
+- **Evrensel Otomasyon Betikleri**:
+  - Proje kök dizinine taşınabilir bağımsız İngilizce kabuk betikleri eklendi:
+    - `run.sh` — Geliştirme, çalıştırma ve headless teftiş.
+    - `stop.sh` — Açık veya takılı kalan tüm süreçleri güvenli kapatıcı.
+    - `install.sh` — Çoklu dağıtım paket bağımlılıklarını kurma ve `/usr` kurulumu.
+    - `uninstall.sh` — Paket yöneticisi ve dosya sistemi temizleyici.
+    - `package.sh` — Otomatik `.deb` ve `.pkg.tar.zst` derleyici.
+    - `manage.sh` — CLI alt komutları ve interaktif terminal yönetim paneli.
+- **Yeni Ekran Görüntüleri ve Görsel Kimlik**:
+  - Eski Pardus ekran görüntüleri ve ikonları tamamen kaldırıldı.
+  - Gerçek GTK 4 & Libadwaita arayüzünden doğrudan üretilen 6 adet yüksek çözünürlüklü (800x580 RGBA) ekran görüntüsü eklendi.
+- **Kapsamlı Testler**:
+  - `tests/test_appimage_and_flatpakref.py` (6 yeni test).
+  - Libadwaita AppImage ve FlatpakRef pencere testleri (toplam 60'tan fazla test senaryosu %100 başarıyla geçmektedir).
+
+---
+
 ## [2.2.0] - 2026-10-14
 
 ### Eklendi

@@ -1,25 +1,44 @@
 # Pars Linux Paket Kurucu — Kurulum Kılavuzu
 
-Bu doküman, `parslinux-package-installer` uygulamasının farklı Linux dağıtımlarında sisteme kurulumunu ve kaldırılmasını açıklamaktadır.
+Bu doküman, `parslinux-package-installer` v3.0.0 uygulamasının farklı Linux dağıtımlarında sisteme kurulumunu ve kaldırılmasını açıklamaktadır.
 
 ---
 
-## 1. Yöntem 1: Pars Linux / Debian Resmi Depolarından Kurulum (Önerilen)
+## 1. Hızlı ve Otomatik Kurulum (Önerilen Script)
 
-Paket Pars Linux ve Debian resmi depolarına eklendiğinde doğrudan APT ile kurulabilir:
+Depoyu klonladıktan sonra sisteminize uygun bağımlılıkları otomatik algılayıp kuran kurulum betiğini çalıştırabilirsiniz:
+
+```bash
+git clone https://github.com/parslinux/parslinux-package-installer.git
+cd parslinux-package-installer
+
+# Bağımlılıkları kontrol eder ve sisteme (/usr) kurar:
+sudo ./install.sh
+```
+
+Sistemden tamamen temizlemek için:
+```bash
+sudo ./uninstall.sh
+```
+
+---
+
+## 2. Pars Linux / Debian Resmi Depolarından Kurulum
+
+Paket Pars Linux ve Debian depolarına eklendiğinde doğrudan APT ile kurulabilir:
 
 ```bash
 sudo apt update
 sudo apt install parslinux-package-installer
 ```
 
-Kurulumun ardından uygulama menünüze eklenecek ve `.deb` dosyaları için varsayılan açıcı olarak atanacaktır.
+Kurulumun ardından uygulama menünüze eklenecek ve `.deb`, `.pkg.tar.*`, `.rpm`, `.appimage`, `.flatpakref`, `.flatpakrepo` dosyaları için sistem ilişkilendirmeleri tamamlanacaktır.
 
 ---
 
-## 2. Yöntem 2: Arch Linux (AUR / PKGBUILD) ile Kurulum
+## 3. Arch Linux (AUR / PKGBUILD) ile Kurulum
 
-Arch Linux, Manjaro veya EndeavourOS üzerinde depoyu klonlayıp PKGBUILD ile tek komutla kurabilirsiniz:
+Arch Linux, CachyOS, Manjaro veya EndeavourOS üzerinde depoyu klonlayıp PKGBUILD ile tek komutla kurabilirsiniz:
 
 ```bash
 git clone https://github.com/parslinux/parslinux-package-installer.git
@@ -34,39 +53,44 @@ sudo pacman -Rns parslinux-package-installer
 
 ---
 
-## 3. Yöntem 3: `.deb` Paket Dosyası ile Kurulum
+## 4. `.deb` Paket Dosyası ile Kurulum
 
-Elinizde derlenmiş `parslinux-package-installer_1.0.0_all.deb` paketi bulunuyorsa:
+Elinizde derlenmiş `parslinux-package-installer_3.0.0_all.deb` paketi bulunuyorsa:
 
 ```bash
-sudo apt install ./parslinux-package-installer_1.0.0_all.deb
+sudo apt install ./parslinux-package-installer_3.0.0_all.deb
 ```
 
 Veya `dpkg` kullanarak:
 
 ```bash
-sudo dpkg -i parslinux-package-installer_1.0.0_all.deb
+sudo dpkg -i parslinux-package-installer_3.0.0_all.deb
 sudo apt-get install -f -y  # Eksik bağımlılıkları tamamlamak için
 ```
 
 ---
 
-## 4. Yöntem 4: Kaynak Koddan Kurulum (Geliştirici Kurulumu)
+## 5. Kaynak Koddan Manuel Kurulum
 
-### 4.1. Bağımlılıkları Yükleyin
+### 5.1. Bağımlılıkları Yükleyin
 
 Debian / Ubuntu / Pars Linux:
 ```bash
 sudo apt update
-sudo apt install -y python3 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-notify-0.7 zstd policykit-1 gettext
+sudo apt install -y python3 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-notify-0.7 zstd policykit-1 gettext desktop-file-utils shared-mime-info
 ```
 
 Arch Linux tabanlı sistemlerde:
 ```bash
-sudo pacman -S python python-gobject gtk4 libadwaita libnotify zstd polkit gettext
+sudo pacman -S python python-gobject gtk4 libadwaita libnotify zstd polkit gettext desktop-file-utils shared-mime-info
 ```
 
-### 4.2. Depoyu İndirin ve Kurun
+Fedora tabanlı sistemlerde:
+```bash
+sudo dnf install -y python3 python3-gobject gtk4 libadwaita libnotify zstd polkit gettext desktop-file-utils shared-mime-info
+```
+
+### 5.2. Kurulum Komutu
 
 ```bash
 git clone https://github.com/parslinux/parslinux-package-installer.git
@@ -76,7 +100,7 @@ sudo python3 setup.py install --root=/ --optimize=1
 
 ---
 
-## 5. Doğrulama ve Test
+## 6. Doğrulama ve Test
 
 Kurulumun başarılı olduğunu doğrulamak için:
 
@@ -88,14 +112,20 @@ parslinux-package-installer --help
 
 ---
 
-## 6. Kaldırma (Uninstall)
+## 7. Kaldırma (Uninstall)
 
-### Debian / Pars Linux:
+### Script ile Kaldırma:
+```bash
+sudo ./uninstall.sh
+```
+
+### Debian / Pars Linux (APT):
 ```bash
 sudo apt remove --purge parslinux-package-installer
 ```
 
-### Arch Linux:
+### Arch Linux (Pacman):
 ```bash
 sudo pacman -Rns parslinux-package-installer
 ```
+

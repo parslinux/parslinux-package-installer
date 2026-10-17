@@ -31,7 +31,16 @@ Bu proje, Pardus ekibi tarafından geliştirilen `pardus-package-installer` proj
    - `parslinux-package-installer -c <paket>`: Bağımlılıkları kontrol edip eksik paketleri listeleme ve exit code üretme.
    - Uzak HTTP/HTTPS paket URL'lerini otomatik indirip inceleme.
 
-6. **Güvenlik ve Onay Denetimi**:
+6. **Taşınabilir ve Evrensel Paket Desteği (v3.0.0)**:
+   - `AppImage`: Bağımsız ELF ikililerini doğrudan çalıştırma, `~/.local/share/applications/` altına entegre etme ve menüden temizleme.
+   - `Flatpakref & Flatpakrepo`: Flathub uygulama referanslarını ve yazılım depolarını tek tıkla kurma/ekleme.
+   - `RPM`: Red Hat / Fedora `.rpm` arşivlerini sorgulama ve ayrıştırma.
+
+7. **Geliştirici ve Yönetim Otomasyon Betikleri**:
+   - Bağımsız İngilizce CLI betikleri (`run.sh`, `stop.sh`, `install.sh`, `uninstall.sh`, `package.sh`, `manage.sh`).
+   - Tam kapsamlı otomatik test paketi (`./run.sh --test`).
+
+8. **Güvenlik ve Onay Denetimi**:
    - Paket kaldırırken veri ve bağımlılık kaybını önleyen onay modal pencereleri (`Adw.MessageDialog`).
-   - Evrensel kilit denetimi (Dpkg ve Pacman).
-   - Tam kapsamlı otomatik test paketi (`tests/run_all_tests.py`).
+   - Evrensel kilit denetimi (Dpkg, Pacman, RPM).
+

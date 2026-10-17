@@ -16,7 +16,14 @@
 - **🌐 Evrensel Çoklu Dağıtım Desteği (Multi-Distro)**:
   - **Debian / Pars Linux**: `.deb` paketlerini saf Python ayrıştırıcı veya `python3-apt` önbelleği ile inceleme, APT motoru ile kurma.
   - **Arch Linux**: `.pkg.tar.zst`, `.pkg.tar.xz`, `.pkg.tar.gz` paketlerini `.PKGINFO` üzerinden okuma, dosya ağacını zstd ile açma, `pacman` motoru ile kurma ve yönetme.
+  - **Fedora / Red Hat / openSUSE**: Bağımsız ikili başlık ayrıştırıcısıyla `.rpm` paketlerini sıfır harici C binding gereksinimiyle inceleme.
   - **Arch'ta .deb Kurulumu**: Arch Linux üzerinde `debtap` yüklüyse `.deb` dosyalarını otomatik dönüştürüp yerel paket olarak kurabilme.
+- **📦 AppImage Taşınabilir Paket Entegrasyonu (.AppImage)**:
+  - AppImage paketlerini ELF başlıklarından otomatik tanıma, tek tıkla yürütme izni verme (`chmod +x`), sistem uygulama menüsüne (`~/.local/share/applications/`) entegre etme veya tek tıkla doğrudan başlatma.
+- **🌐 Flathub & Flatpakref Desteği (.flatpakref & .flatpakrepo)**:
+  - Flathub `.flatpakref` uygulama bağlantılarını ve `.flatpakrepo` depolarını tek tıkla sisteme entegre etme.
+- **🛡️ Btrfs & Timeshift Sistem Güvencesi**:
+  - Kurulum öncesi otomatik sistem geri yükleme noktası (Snapshot) oluşturma ve masaüstü bildirimleri (`Notify`).
 - **📦 Toplu Kurulum Kuyruğu (Batch Queue)**:
   - Birden çok paketi aynı anda seçip veya sürükleyip bırakarak toplu kuyruğa ekleme.
   - Tek bir PolicyKit yetkilendirme oturumu ile tüm kuyruğu sıralı ve bağımlılık uyumlu kurma.
@@ -24,7 +31,7 @@
   - Paket içerisindeki tüm dosya ve dizinleri dosya türü ikonları, izin modları ve boyutlarıyla listeleme.
   - Anlık arama çubuğu ile sıfır gecikmeli dosya süzme.
 - **⚡ Headless CLI Teftiş Modu**:
-  - `parslinux-package-installer -i paket.deb / paket.pkg.tar.zst`: Arayüz açmadan terminalde ayrıntılı metaveri dökümü.
+  - `parslinux-package-installer -i paket.deb / paket.pkg.tar.zst / app.AppImage`: Arayüz açmadan terminalde ayrıntılı metaveri dökümü.
   - `parslinux-package-installer -c paket.deb / paket.pkg.tar.zst`: Bağımlılıkları kontrol edip eksik paketleri raporlama (otomasyonlar için exit code 0 veya 1).
 - **🌐 Uzak URL'den Doğrudan Açma**:
   - `parslinux-package-installer https://example.com/yazilim.deb` şeklinde verilen uzak paketleri geçici dizine indirip anında inceleme.
@@ -35,12 +42,16 @@
 ## 📸 Ekran Görüntüleri
 
 <p align="center">
-  <img src="screenshots/parslinux-package-installer-1.png" width="48%" alt="Tekli Paket İnceleme" />
+  <img src="screenshots/parslinux-package-installer-1.png" width="48%" alt="Tekli Debian Paketi" />
   <img src="screenshots/parslinux-package-installer-2.png" width="48%" alt="Arch Linux Paketi" />
 </p>
 <p align="center">
   <img src="screenshots/parslinux-package-installer-3.png" width="48%" alt="İçerilen Dosyalar Arama" />
   <img src="screenshots/parslinux-package-installer-4.png" width="48%" alt="Toplu Kurulum Kuyruğu" />
+</p>
+<p align="center">
+  <img src="screenshots/parslinux-package-installer-5.png" width="48%" alt="AppImage Menü Entegrasyonu" />
+  <img src="screenshots/parslinux-package-installer-6.png" width="48%" alt="Karşılama Ekranı" />
 </p>
 
 ---
@@ -63,46 +74,58 @@ yay -S debtap
 
 ---
 
-## 🛠️ Çalıştırma
+## 🛠️ Hızlı Otomasyon Betikleri
+
+Depo kök dizininde geliştirme, test, çalıştırma ve paketlemeyi kolaylaştıran taşınabilir betikler yer alır:
 
 ```bash
-# Grafik arayüz ile paket açma:
-parslinux-package-installer paket.deb
-# veya Arch paketi:
-parslinux-package-installer paket.pkg.tar.zst
+# Uygulamayı yerel kaynak koddan başlatma:
+./run.sh
+./run.sh paket.deb
+./run.sh paket.pkg.tar.zst
+./run.sh uygulama.AppImage
+./run.sh --sample
 
-# Uzak URL açma:
-parslinux-package-installer https://example.com/uygulama.deb
+# Arayüz açmadan terminal teftişi:
+./run.sh -i paket.deb
+./run.sh -c paket.deb
 
-# Terminalde metaveri görüntüleme (Headless):
-parslinux-package-installer -i paket.deb
+# Çalışan süreçleri durdurma:
+./stop.sh
 
-# Terminalde bağımlılık doğrulama:
-parslinux-package-installer -c paket.deb
+# Otomatik bağımlılık ve sisteme yükleme:
+./install.sh
+
+# Sistemden kaldırma:
+./uninstall.sh
+
+# Dağıtım paketi üretme (Debian .deb / Arch .pkg.tar.zst):
+./package.sh
+
+# İnteraktif yönetim menüsü:
+./manage.sh
 ```
 
 ---
 
 ## 🔨 Paketleme ve Derleme
 
-### Debian Paketi Oluşturma (`.deb`):
+### Otomatik Paketleme:
 ```bash
-sudo apt install devscripts git-buildpackage
-gbp buildpackage --git-export-dir=/tmp/build/parslinux-package-installer -us -uc
-```
-
-### Arch Linux Paketi Oluşturma (`PKGBUILD`):
-```bash
-makepkg -si
+./package.sh          # Sisteminize göre otomatik algılar ve paketler
+./package.sh --deb    # Debian (.deb) paketi derler
+./package.sh --arch   # Arch Linux (.pkg.tar.zst) paketi derler
 ```
 
 ---
 
 ## 🧪 Testleri Çalıştırma
 
-Proje tam kapsamlı otomatik birim ve entegrasyon testleriyle korunmaktadır:
+Proje tam kapsamlı otomatik birim, arayüz ve entegrasyon testleriyle korunmaktadır:
 
 ```bash
+./run.sh --test
+# veya doğrudan:
 python3 tests/run_all_tests.py
 ```
 

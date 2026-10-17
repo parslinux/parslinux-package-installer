@@ -187,29 +187,6 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
   - `tests/test_rpm_and_flatpak.py` (13 yeni test) ve Libadwaita RPM pencere entegrasyon testi.
   - Toplam 7 test paketinde 54 test senaryosu %100 başarıyla geçmektedir.
 
----
-
-## 🚀 Sürüm Yol Haritası (Roadmap)
-
-### v1.1.0 (Tamamlanan Özellikler ✅)
-- [x] **🌐 Uzak URL'den Doğrudan İndirip İnceleme:** `parslinux-package-installer https://example.com/app.deb` komutu ve GUI indirme desteği sağlandı.
-- [x] **📦 Toplu Kurulumda Tek Seferlik APT Oturumu:** Tüm kuyruk tek bir PolicyKit oturumunda çapraz bağımlılıklarla kurulabiliyor.
-- [x] **🧩 Çoklu Mimari (Multiarch) Yardımcısı:** Eksik mimarili paketlerde `dpkg --add-architecture` önerisi eklendi.
-
-### v2.0.0 (Büyük Dönüşüm & Çoklu Dağıtım ✅)
-- [x] **💎 Saf GTK 4 / Libadwaita'ya Tam Geçiş:** Glade 3 XML'in tamamen kaldırılarak sadece Libadwaita arayüzünün bırakılması.
-- [x] **🏹 Arch Linux Desteği:** `.pkg.tar.zst` formatı, `pacman` eylem motoru ve AUR `PKGBUILD` paketleme desteği.
-- [x] **⚡ Polimorfik Paket Yükleyici:** `PackageLoader.open_package()` ile genişletilebilir modüler mimari.
-
-### v2.1.0 (Sistem Güvencesi & Bildirimler ✅)
-- [x] **🛡️ Btrfs / Timeshift Anlık Görüntü (Snapshot) Güvencesi:** Kurulum öncesi otomatik geri yükleme noktası.
-- [x] **🔔 Masaüstü Bildirimleri:** `Gio.Notification` ve `notify-send` ile arka plan işlem bildirimleri.
-- [x] **🩺 CLI Snapshot Teftişi:** `--snapshot-status` parametresi.
-
-### v2.2.0 (Tamamlanan Özellikler ✅)
-- [x] **💡 Akıllı Alternatif / Flatpak Önerisi:** Depolarda olmayan paketler için Flathub entegrasyonu, arayüz içi kurulum banner'ı ve CLI alternatif önerisi.
-- [x] **📦 RPM (.rpm) Ailesi Desteği (Test Edilmiştir):** Fedora / openSUSE / RHEL paketlerinin harici bağımlılık olmadan incelenmesi, dosya ağacı dökümü ve sistem kurulum köprüsü.
-
 ## 🎯 Kilometre Taşı 16: AppImage Taşınabilir Paket & Flathub Flatpakref Entegrasyonu (v3.0.0) ✅
 - [x] **AppImage Taşınabilir Paket Motoru (`src/AppImagePackage.py`)**:
   - ELF ikili başlığını ayrıştırma (x86_64, i386, aarch64 mimari tespiti) ve dosya adı sürüm analizi.
@@ -254,4 +231,6 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 ### v3.0.0 (Tamamlanan Özellikler ✅)
 - [x] **📦 AppImage Taşınabilir Paket Entegrasyonu:** AppImage paketlerinin doğrudan incelenmesi, sistem menüsüne entegrasyonu (`.desktop`), tek tıkla çalıştırılması ve yönetimi.
 - [x] **🌐 Flathub Doğrudan Flatpakref İndirme ve Yönetimi:** `.flatpakref` ve `.flatpakrepo` tek tıkla kurulum ve depo yönetim işleyicisi.
+- [x] **🛠️ Bağımsız Otomasyon Betikleri:** `run.sh`, `stop.sh`, `install.sh`, `uninstall.sh`, `package.sh`, `manage.sh`.
+
 
