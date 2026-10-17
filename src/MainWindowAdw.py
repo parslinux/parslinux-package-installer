@@ -395,7 +395,44 @@ class MainWindowAdw(Adw.ApplicationWindow):
         chk = self.package.compare_to_version_in_cache()
         installed_ver = self.package.get_installed_version()
 
-        if chk == 0:
+        if hasattr(self.package, "integrate_desktop"):
+            if chk == 0:
+                self.banner_status.set_title("AppImage taşınabilir paketi menüye entegre edilmeye hazır")
+                self.btn_install.set_label("Menüye Ekle")
+                self.btn_install.set_sensitive(True)
+                self.btn_remove.set_sensitive(False)
+            else:
+                self.banner_status.set_title("AppImage sistem menüsüne entegre edilmiş durumda")
+                self.btn_install.set_label("Başlat")
+                self.btn_install.set_sensitive(True)
+                self.btn_remove.set_label("Menüden Kaldır")
+                self.btn_remove.set_sensitive(True)
+        elif hasattr(self.package, "is_repo"):
+            if self.package.is_repo:
+                if chk == 0:
+                    self.banner_status.set_title("Flatpak yazılım deposu sisteme eklenmeye hazır")
+                    self.btn_install.set_label("Depoyu Ekle")
+                    self.btn_install.set_sensitive(True)
+                    self.btn_remove.set_sensitive(False)
+                else:
+                    self.banner_status.set_title("Flatpak deposu sistemde aktif")
+                    self.btn_install.set_label("Güncelle")
+                    self.btn_install.set_sensitive(True)
+                    self.btn_remove.set_label("Depoyu Kaldır")
+                    self.btn_remove.set_sensitive(True)
+            else:
+                if chk == 0:
+                    self.banner_status.set_title("Flathub uygulaması kurulmaya hazır")
+                    self.btn_install.set_label("Flathub'dan Kur")
+                    self.btn_install.set_sensitive(True)
+                    self.btn_remove.set_sensitive(False)
+                else:
+                    self.banner_status.set_title(f"Flathub uygulaması kurulu ({installed_ver})")
+                    self.btn_install.set_label("Yeniden Kur")
+                    self.btn_install.set_sensitive(True)
+                    self.btn_remove.set_label("Kaldır")
+                    self.btn_remove.set_sensitive(True)
+        elif chk == 0:
             self.banner_status.set_title("Bu paket kurulmaya hazır")
             self.btn_install.set_label("Kur")
             self.btn_install.set_sensitive(True)
@@ -484,12 +521,15 @@ class MainWindowAdw(Adw.ApplicationWindow):
         self.lbl_files_count.set_label(f"{len(details)} dosya")
 
         for d in details:
-            row = Adw.ActionRow(title=d["name"])
-            icon_name = "folder-symbolic" if d["is_dir"] else ("emblem-symbolic-link" if d["is_sym"] else ("application-x-executable-symbolic" if d["is_exec"] else "text-x-generic-symbolic"))
+            row = Adw.ActionRow(title=d.get("name", "file"))
+            is_dir = d.get("is_dir", False)
+            is_sym = d.get("is_sym", False)
+            is_exec = d.get("is_exec", False)
+            icon_name = "folder-symbolic" if is_dir else ("emblem-symbolic-link" if is_sym else ("application-x-executable-symbolic" if is_exec else "text-x-generic-symbolic"))
             row.add_prefix(Gtk.Image.new_from_icon_name(icon_name))
-            size_str = "-" if d["is_dir"] else MainWindowAdw.format_size(d["size"])
+            size_str = "-" if is_dir else MainWindowAdw.format_size(d.get("size", 0))
             row.add_suffix(Gtk.Label(label=size_str, css_classes=["dim-label"]))
-            row._filepath = d["name"].lower()
+            row._filepath = d.get("name", "").lower()
             self.files_listbox.append(row)
 
     def filter_files_func(self, row):
@@ -645,14 +685,28 @@ class MainWindowAdw(Adw.ApplicationWindow):
 
     # Actions: Install & Remove Single
     def on_install_clicked(self, button):
+        if hasattr(self.package, "integrate_desktop") and self.package.is_integrated():
+            ok, msg = self.package.launch()
+            self.show_toast(msg)
+            return
         self.run_single_action("install")
 
     def on_remove_clicked(self, button):
         pkg_name = self.package.pkgname if self.package else ""
+        if hasattr(self.package, "integrate_desktop"):
+            heading = "Menü Entegrasyonunu Kaldır?"
+            body = f"'{pkg_name}' için oluşturulmuş masaüstü kısayolu sistem menüsünden kaldırılacak."
+        elif hasattr(self.package, "is_repo") and self.package.is_repo:
+            heading = "Depoyu Kaldır?"
+            body = f"'{pkg_name}' Flatpak yazılım deposu sistemden kaldırılacak."
+        else:
+            heading = "Paketi Kaldır?"
+            body = f"'{pkg_name}' paketini sistemden kaldırmak istediğinizden emin misiniz?\nBu işlem pakete bağımlı diğer bileşenleri de kaldırabilir."
+
         dialog = Adw.MessageDialog(
             transient_for=self,
-            heading="Paketi Kaldır?",
-            body=f"'{pkg_name}' paketini sistemden kaldırmak istediğinizden emin misiniz?\nBu işlem pakete bağımlı diğer bileşenleri de kaldırabilir.",
+            heading=heading,
+            body=body,
         )
         dialog.add_response("cancel", "İptal")
         dialog.add_response("remove", "Kaldır")
@@ -670,6 +724,61 @@ class MainWindowAdw(Adw.ApplicationWindow):
     def run_single_action(self, action_type):
         if not self.debianpackage:
             return
+
+        # AppImage Desktop Integration
+        if hasattr(self.package, "integrate_desktop"):
+            self.btn_install.set_sensitive(False)
+            self.btn_remove.set_sensitive(False)
+            self.install_revealer.set_reveal_child(True)
+            self.pkg_progressbar.set_fraction(0.5)
+            self.pkg_status_lbl.set_label("Masaüstü menü entegrasyonu güncelleniyor...")
+
+            def appimage_worker():
+                if action_type == "install":
+                    ok, msg = self.package.integrate_desktop()
+                else:
+                    ok, msg = self.package.remove_desktop()
+
+                def done():
+                    self.btn_install.set_sensitive(True)
+                    self.btn_remove.set_sensitive(True)
+                    self.pkg_progressbar.set_fraction(1.0)
+                    self.pkg_status_lbl.set_label(msg)
+                    self.show_toast(msg)
+                    self.from_file(self.debianpackage)
+
+                GLib.idle_add(done)
+
+            threading.Thread(target=appimage_worker, daemon=True).start()
+            return
+
+        # FlatpakRef and FlatpakRepo Actions
+        if hasattr(self.package, "install") and hasattr(self.package, "remove"):
+            self.btn_install.set_sensitive(False)
+            self.btn_remove.set_sensitive(False)
+            self.install_revealer.set_reveal_child(True)
+            self.pkg_progressbar.set_fraction(0.5)
+            self.pkg_status_lbl.set_label("Flatpak işlemi yürütülüyor...")
+
+            def flatpak_worker():
+                if action_type == "install":
+                    ok, msg = self.package.install()
+                else:
+                    ok, msg = self.package.remove()
+
+                def done():
+                    self.btn_install.set_sensitive(True)
+                    self.btn_remove.set_sensitive(True)
+                    self.pkg_progressbar.set_fraction(1.0)
+                    self.pkg_status_lbl.set_label(msg)
+                    self.show_toast(msg)
+                    self.from_file(self.debianpackage)
+
+                GLib.idle_add(done)
+
+            threading.Thread(target=flatpak_worker, daemon=True).start()
+            return
+
         self.btn_install.set_sensitive(False)
         self.btn_remove.set_sensitive(False)
         self.install_revealer.set_reveal_child(True)

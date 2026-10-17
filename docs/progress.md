@@ -210,7 +210,48 @@ Bu dosya, projenin mevcut durumu, tamamlanan kilometre taşları ve gelecek hede
 - [x] **💡 Akıllı Alternatif / Flatpak Önerisi:** Depolarda olmayan paketler için Flathub entegrasyonu, arayüz içi kurulum banner'ı ve CLI alternatif önerisi.
 - [x] **📦 RPM (.rpm) Ailesi Desteği (Test Edilmiştir):** Fedora / openSUSE / RHEL paketlerinin harici bağımlılık olmadan incelenmesi, dosya ağacı dökümü ve sistem kurulum köprüsü.
 
-### v3.0.0 (Gelecek Hedefleri)
-- [ ] **📦 AppImage Taşınabilir Paket Entegrasyonu:** AppImage paketlerinin doğrudan sistem menüsüne entegrasyonu ve güncellenmesi.
-- [ ] **🌐 Flathub Doğrudan Flatpakref İndirme ve Yönetimi:** `.flatpakref` ve `.flatpakrepo` tek tıkla kurulum işleyicisi.
+## 🎯 Kilometre Taşı 16: AppImage Taşınabilir Paket & Flathub Flatpakref Entegrasyonu (v3.0.0) ✅
+- [x] **AppImage Taşınabilir Paket Motoru (`src/AppImagePackage.py`)**:
+  - ELF ikili başlığını ayrıştırma (x86_64, i386, aarch64 mimari tespiti) ve dosya adı sürüm analizi.
+  - Bağımsız yürütülebilirlik kontrolü (`chmod +x`).
+  - Tek tıkla yerel masaüstü menü entegrasyonu (`~/.local/share/applications/appimage-<pkg>.desktop`).
+  - Doğrudan arayüzden başlatma ("Başlat") ve menüden kaldırma ("Menüden Kaldır").
+- [x] **Flathub Flatpakref & Flatpakrepo Motoru (`src/FlatpakRefPackage.py`)**:
+  - INI tabanlı `.flatpakref` ve `.flatpakrepo` metaveri ayrıştırma (`Name`, `Title`, `Branch`, `Description`, `Url`).
+  - Sistemde uygulamanın/deponun kurulu olup olmadığını dinamik sorgulama (`flatpak info`, `flatpak remotes`).
+  - Tek tıkla "Flathub'dan Kur", "Depoyu Ekle" ve "Kaldır" eylemleri.
+- [x] **Evrensel Paket Yükleyici & Libadwaita Entegrasyonu**:
+  - `PackageLoader.is_supported_package()` ve `open_package()` ile `.appimage`, `.flatpakref`, `.flatpakrepo` desteği.
+  - `MainWindowAdw.py` içinde dinamik durum etiketleri ve güvenli onay pencereleri.
+  - `.desktop` dosyasında FreeDesktop MIME türü ilişkilendirmeleri (`application/vnd.appimage`, `application/vnd.flatpak.ref`, `application/vnd.flatpak.repo`).
+- [x] **Kapsamlı Test Kapsamı**:
+  - `tests/test_appimage_and_flatpakref.py` (6 birim/entegrasyon testi).
+  - Libadwaita AppImage ve FlatpakRef pencere testleri (%100 başarıyla geçiyor).
+
+---
+
+## 🚀 Sürüm Yol Haritası (Roadmap)
+
+### v1.1.0 (Tamamlanan Özellikler ✅)
+- [x] **🌐 Uzak URL'den Doğrudan İndirip İnceleme:** `parslinux-package-installer https://example.com/app.deb` komutu ve GUI indirme desteği sağlandı.
+- [x] **📦 Toplu Kurulumda Tek Seferlik APT Oturumu:** Tüm kuyruk tek bir PolicyKit oturumunda çapraz bağımlılıklarla kurulabiliyor.
+- [x] **🧩 Çoklu Mimari (Multiarch) Yardımcısı:** Eksik mimarili paketlerde `dpkg --add-architecture` önerisi eklendi.
+
+### v2.0.0 (Büyük Dönüşüm & Çoklu Dağıtım ✅)
+- [x] **💎 Saf GTK 4 / Libadwaita'ya Tam Geçiş:** Glade 3 XML'in tamamen kaldırılarak sadece Libadwaita arayüzünün bırakılması.
+- [x] **🏹 Arch Linux Desteği:** `.pkg.tar.zst` formatı, `pacman` eylem motoru ve AUR `PKGBUILD` paketleme desteği.
+- [x] **⚡ Polimorfik Paket Yükleyici:** `PackageLoader.open_package()` ile genişletilebilir modüler mimari.
+
+### v2.1.0 (Sistem Güvencesi & Bildirimler ✅)
+- [x] **🛡️ Btrfs / Timeshift Anlık Görüntü (Snapshot) Güvencesi:** Kurulum öncesi otomatik geri yükleme noktası.
+- [x] **🔔 Masaüstü Bildirimleri:** `Gio.Notification` ve `notify-send` ile arka plan işlem bildirimleri.
+- [x] **🩺 CLI Snapshot Teftişi:** `--snapshot-status` parametresi.
+
+### v2.2.0 (Tamamlanan Özellikler ✅)
+- [x] **💡 Akıllı Alternatif / Flatpak Önerisi:** Depolarda olmayan paketler için Flathub entegrasyonu, arayüz içi kurulum banner'ı ve CLI alternatif önerisi.
+- [x] **📦 RPM (.rpm) Ailesi Desteği (Test Edilmiştir):** Fedora / openSUSE / RHEL paketlerinin harici bağımlılık olmadan incelenmesi, dosya ağacı dökümü ve sistem kurulum köprüsü.
+
+### v3.0.0 (Tamamlanan Özellikler ✅)
+- [x] **📦 AppImage Taşınabilir Paket Entegrasyonu:** AppImage paketlerinin doğrudan incelenmesi, sistem menüsüne entegrasyonu (`.desktop`), tek tıkla çalıştırılması ve yönetimi.
+- [x] **🌐 Flathub Doğrudan Flatpakref İndirme ve Yönetimi:** `.flatpakref` ve `.flatpakrepo` tek tıkla kurulum ve depo yönetim işleyicisi.
 

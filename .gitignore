@@ -6,5 +6,11 @@ __pycache__/
 *.mo
 scratch/
 build/
+build*/
 dist/
+pkg/
+src/__pycache__/
+tests/__pycache__/
+*.pkg.tar.zst
+!tests/fixtures/*.pkg.tar.zst
 *.egg-info/

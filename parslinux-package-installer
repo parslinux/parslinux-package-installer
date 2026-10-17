@@ -27,5 +27,4 @@ if use_adw:
     sys.exit(MainAdw.main())
 else:
     import Main
-    app = Main.Application()
-    sys.exit(app.run(sys.argv))
+    sys.exit(Main.main())
